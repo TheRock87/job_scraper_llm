@@ -42,7 +42,7 @@ jobs:
     - name: 📦 Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pandas pyyaml requests
+        pip install pandas pyyaml requests beautifulsoup4 numpy pydantic markdownify tls-client urllib3
     
     - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
       run: |
