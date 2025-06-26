@@ -11,11 +11,64 @@ site_name:
   # - bayt
 
 locations:
+  # Egypt
   - Cairo, Egypt
   - Giza, Egypt
+  - New Cairo, Egypt
+  - 6th of October City, Egypt
+  - Nasr City, Egypt
+  - Sheikh Zayed City, Egypt
+  # UAE
   - Dubai, UAE
   - Abu Dhabi, UAE
   - Sharjah, UAE
+  - Al Ain, UAE
+  # Saudi Arabia
+  - Riyadh, Saudi Arabia
+  - Jeddah, Saudi Arabia
+  - Dammam, Saudi Arabia
+  - Khobar, Saudi Arabia
+  - Mecca, Saudi Arabia
+  - Medina, Saudi Arabia
+  - NEOM, Saudi Arabia
+  # Kuwait
+  - Kuwait City, Kuwait
+  - Hawally, Kuwait
+  - Salmiya, Kuwait
+  # Qatar, Oman, Bahrain
+  - Doha, Qatar
+  - Muscat, Oman
+  - Manama, Bahrain
+  # Germany
+  - Berlin, Germany
+  - Munich, Germany
+  - Frankfurt, Germany
+  - Hamburg, Germany
+  - Stuttgart, Germany
+  # Spain
+  - Madrid, Spain
+  - Barcelona, Spain
+  - Valencia, Spain
+  # UK
+  - London, UK
+  - Manchester, UK
+  - Cambridge, UK
+  - Edinburgh, UK
+  - Birmingham, UK
+  - Bristol, UK
+  - Nottingham, UK
+  # Austria
+  - Vienna, Austria
+  - Linz, Austria
+  - Graz, Austria
+  # Canada
+  - Toronto, Canada
+  - Vancouver, Canada
+  - Montreal, Canada
+  - Ottawa, Canada
+  - Calgary, Canada
+  - Edmonton, Canada
+  - Waterloo, Canada
 
 # Output settings
 output_file: jobs_raw.csv

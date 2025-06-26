@@ -86,11 +86,41 @@ def scrape_jobs_with_progress(config):
             
             # Fix: Properly format country strings
             if "UAE" in location.upper() or "United Arab Emirates" in location:
-                country_indeed = "united arab emirates"
+                country_indeed = "United Arab Emirates"
                 location_clean = location.replace("UAE", "").replace("United Arab Emirates", "").strip(", ").strip()
             elif "EGYPT" in location.upper():
-                country_indeed = "egypt"
+                country_indeed = "Egypt"
                 location_clean = location.replace("EGYPT", "").strip(", ").strip()
+            elif "SAUDI ARABIA" in location.upper():
+                country_indeed = "Saudi Arabia"
+                location_clean = location.replace("Saudi Arabia", "").strip(", ").strip()
+            elif "KUWAIT" in location.upper():
+                country_indeed = "Kuwait"
+                location_clean = location.replace("Kuwait", "").strip(", ").strip()
+            elif "QATAR" in location.upper():
+                country_indeed = "Qatar"
+                location_clean = location.replace("Qatar", "").strip(", ").strip()
+            elif "OMAN" in location.upper():
+                country_indeed = "Oman"
+                location_clean = location.replace("Oman", "").strip(", ").strip()
+            elif "BAHRAIN" in location.upper():
+                country_indeed = "Bahrain"
+                location_clean = location.replace("Bahrain", "").strip(", ").strip()
+            elif "GERMANY" in location.upper():
+                country_indeed = "Germany"
+                location_clean = location.replace("Germany", "").strip(", ").strip()
+            elif "SPAIN" in location.upper():
+                country_indeed = "Spain"
+                location_clean = location.replace("Spain", "").strip(", ").strip()
+            elif "UK" in location.upper() or "UNITED KINGDOM" in location.upper():
+                country_indeed = "UK"
+                location_clean = location.replace("UK", "").replace("United Kingdom", "").strip(", ").strip()
+            elif "AUSTRIA" in location.upper():
+                country_indeed = "Austria"
+                location_clean = location.replace("Austria", "").strip(", ").strip()
+            elif "CANADA" in location.upper():
+                country_indeed = "Canada"
+                location_clean = location.replace("Canada", "").strip(", ").strip()
             else:
                 country_indeed = None
                 location_clean = location
