@@ -101,11 +101,11 @@ jobs:
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
       run: |
         cd job_filter_app
-        if [ -f "processed_jobs/processed_jobs.csv" ]; then
-          rclone copy processed_jobs/processed_jobs.csv gdrive:AI-Jobs/ --progress
+        if [ -f "processed_jobs/all_jobs.csv" ]; then
+          rclone copy processed_jobs/all_jobs.csv gdrive:AI-Jobs/ --progress
         fi
-        if [ -f "processed_jobs/processing_summary.json" ]; then
-          rclone copy processed_jobs/processing_summary.json gdrive:AI-Jobs/ --progress
+        if [ -f "processed_jobs/summary.json" ]; then
+          rclone copy processed_jobs/summary.json gdrive:AI-Jobs/ --progress
         fi
       env:
         RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}

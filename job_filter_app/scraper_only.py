@@ -163,8 +163,8 @@ def upload_to_gdrive(local_file, remote_folder="gdrive:AI-Jobs"):
         # Check if rclone is installed
         result = subprocess.run(["rclone", "version"], capture_output=True, text=True)
         if result.returncode != 0:
-            print("❌ rclone is not installed. Please install rclone first.")
-            print("   Visit: https://rclone.org/install/")
+            print("❌ rclone is not installed locally. Skipping Google Drive upload.")
+            print("   This is normal when running locally - upload will happen in GitHub Actions.")
             return False
         
         # Upload file
@@ -180,6 +180,10 @@ def upload_to_gdrive(local_file, remote_folder="gdrive:AI-Jobs"):
             print(f"❌ Upload failed: {result.stderr}")
             return False
             
+    except FileNotFoundError:
+        print("❌ rclone is not installed locally. Skipping Google Drive upload.")
+        print("   This is normal when running locally - upload will happen in GitHub Actions.")
+        return False
     except Exception as e:
         print(f"❌ Upload error: {e}")
         return False
@@ -205,9 +209,8 @@ def main():
     if not save_to_csv(df, output_file):
         sys.exit(1)
     
-    # Step 4: Upload to Google Drive
-    if not upload_to_gdrive(output_file):
-        print("⚠️ Upload to Google Drive failed, but local file was saved.")
+    # Step 4: Try to upload to Google Drive (optional for local runs)
+    upload_success = upload_to_gdrive(output_file)
     
     # Final summary
     print("\n" + "=" * 50)
@@ -215,7 +218,10 @@ def main():
     print("=" * 50)
     print(f"📊 Total jobs scraped: {len(df)}")
     print(f"📄 Local file: {output_file}")
-    print(f"☁️ Uploaded to: gdrive:AI-Jobs/{output_file}")
+    if upload_success:
+        print(f"☁️ Uploaded to: gdrive:AI-Jobs/{output_file}")
+    else:
+        print("☁️ Upload skipped (rclone not available locally)")
     print("\n📝 Next step: Run the Google Colab notebook to process with LLM")
 
 if __name__ == "__main__":
