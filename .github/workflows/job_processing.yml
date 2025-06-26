@@ -46,7 +46,8 @@ jobs:
     
     - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
       run: |
-        python job_filter_app/scraper_only.py
+        cd job_filter_app
+        python scraper_only.py
     
     - name: 🔍 Process and identify new jobs
       id: process-jobs
