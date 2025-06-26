@@ -4,30 +4,35 @@ Simplified Job Scraping Script
 This script scrapes jobs and saves them to jobs_raw.csv, then uploads to Google Drive
 """
 
-import yaml
-import pandas as pd
-from datetime import datetime
-import sys
-from pathlib import Path
+import logging
+import os
 import re
 import subprocess
-import os
+import sys
+from datetime import datetime
+from pathlib import Path
+
+import pandas as pd
+import yaml
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 current_dir = Path(__file__).resolve().parent
 jobspy_path = current_dir.parent
-print("[🧪] Adding to sys.path:", jobspy_path)
+logging.info("[🧪] Adding to sys.path: %s", jobspy_path)
 sys.path.insert(0, str(jobspy_path))
 
 try:
     from jobspy import scrape_jobs
-    print("[✅] jobspy imported successfully!")
+    logging.info("[✅] jobspy imported successfully!")
 except Exception as e:
-    print("[❌] jobspy import failed:", e)
+    logging.error("[❌] jobspy import failed: %s", e)
     raise
 
 def load_config():
     """Load and validate configuration"""
-    print("🔍 Loading configuration...")
+    logging.info("🔍 Loading configuration...")
     try:
         with open("config.yaml", "r") as f:
             config = yaml.safe_load(f)
@@ -36,27 +41,27 @@ def load_config():
         required_fields = ["search_term", "locations", "site_name", "results_wanted"]
         for field in required_fields:
             if field not in config:
-                print(f"❌ Missing required field: {field}")
+                logging.error("❌ Missing required field: %s", field)
                 return None
         
-        print("✅ Configuration loaded successfully!")
+        logging.info("✅ Configuration loaded successfully!")
         return config
     except FileNotFoundError:
-        print("❌ config.yaml not found")
+        logging.error("❌ config.yaml not found")
         return None
     except yaml.YAMLError as e:
-        print(f"❌ Error parsing config.yaml: {e}")
+        logging.error("❌ Error parsing config.yaml: %s", e)
         return None
 
 def scrape_jobs_with_progress(config):
     """Scrape jobs with enhanced progress tracking"""
-    print("\n🚀 Starting job scraping...")
-    print("=" * 50)
+    logging.info("\n🚀 Starting job scraping...")
+    logging.info("=" * 50)
     
     # Parse search terms
     search_terms = [
         term.strip().strip('"') 
-        for term in re.split(r"\s+OR\s+", config["search_term"]) 
+        for term in re.split(r"\\s+OR\\s+", config["search_term"]) 
         if not term.startswith("-")  # Exclude negative terms
     ]
     
@@ -67,12 +72,12 @@ def scrape_jobs_with_progress(config):
     linkedin_fetch_description = config.get("linkedin_fetch_description", False)
     description_format = config.get("description_format", "markdown")
     
-    print(f"📋 Configuration:")
-    print(f"  Search terms: {search_terms}")
-    print(f"  Locations: {locations}")
-    print(f"  Sites: {site_name}")
-    print(f"  Results per search: {results_wanted}")
-    print(f"  Hours old: {hours_old}")
+    logging.info("📋 Configuration:")
+    logging.info("  Search terms: %s", search_terms)
+    logging.info("  Locations: %s", locations)
+    logging.info("  Sites: %s", site_name)
+    logging.info("  Results per search: %s", results_wanted)
+    logging.info("  Hours old: %s", hours_old)
     
     # Store all jobs here
     all_jobs = []
@@ -82,44 +87,44 @@ def scrape_jobs_with_progress(config):
     for search_term in search_terms:
         for location in locations:
             current_search += 1
-            print(f"\n[{current_search}/{total_searches}] 🔍 Scraping '{search_term}' in {location}")
-            print(f"    → Starting search for '{search_term}' in '{location}'...")
+            logging.info("\n[%d/%d] 🔍 Scraping '%s' in %s", current_search, total_searches, search_term, location)
+            logging.info("    → Starting search for '%s' in '%s'...", search_term, location)
             # Fix: Properly format country strings
             if "UAE" in location.upper() or "United Arab Emirates" in location:
-                country_indeed = "united arab emirates"
+                country_indeed = "United Arab Emirates"
                 location_clean = location.replace("UAE", "").replace("United Arab Emirates", "").strip(", ").strip()
             elif "EGYPT" in location.upper():
-                country_indeed = "egypt"
+                country_indeed = "Egypt"
                 location_clean = location.replace("EGYPT", "").strip(", ").strip()
             elif "SAUDI ARABIA" in location.upper():
-                country_indeed = "saudi arabia"
+                country_indeed = "Saudi Arabia"
                 location_clean = location.replace("Saudi Arabia", "").strip(", ").strip()
             elif "KUWAIT" in location.upper():
-                country_indeed = "kuwait"
+                country_indeed = "Kuwait"
                 location_clean = location.replace("Kuwait", "").strip(", ").strip()
             elif "QATAR" in location.upper():
-                country_indeed = "qatar"
+                country_indeed = "Qatar"
                 location_clean = location.replace("Qatar", "").strip(", ").strip()
             elif "OMAN" in location.upper():
-                country_indeed = "oman"
+                country_indeed = "Oman"
                 location_clean = location.replace("Oman", "").strip(", ").strip()
             elif "BAHRAIN" in location.upper():
-                country_indeed = "bahrain"
+                country_indeed = "Bahrain"
                 location_clean = location.replace("Bahrain", "").strip(", ").strip()
             elif "GERMANY" in location.upper():
-                country_indeed = "germany"
+                country_indeed = "Germany"
                 location_clean = location.replace("Germany", "").strip(", ").strip()
             elif "SPAIN" in location.upper():
-                country_indeed = "spain"
+                country_indeed = "Spain"
                 location_clean = location.replace("Spain", "").strip(", ").strip()
             elif "UK" in location.upper() or "UNITED KINGDOM" in location.upper():
-                country_indeed = "united kingdom"
+                country_indeed = "UK"
                 location_clean = location.replace("UK", "").replace("United Kingdom", "").strip(", ").strip()
             elif "AUSTRIA" in location.upper():
-                country_indeed = "austria"
+                country_indeed = "Austria"
                 location_clean = location.replace("Austria", "").strip(", ").strip()
             elif "CANADA" in location.upper():
-                country_indeed = "canada"
+                country_indeed = "Canada"
                 location_clean = location.replace("Canada", "").strip(", ").strip()
             elif "IRELAND" in location.upper():
                 country_indeed = "Ireland"
@@ -148,79 +153,79 @@ def scrape_jobs_with_progress(config):
                     jobs["search_term"] = search_term
                     jobs["search_location"] = location
                     all_jobs.append(jobs)
-                    print(f"    ✅ Finished: {len(jobs)} jobs found for '{search_term}' in '{location}'")
+                    logging.info("    ✅ Finished: %d jobs found for '%s' in '%s'", len(jobs), search_term, location)
                 else:
-                    print(f"    ⚠️ No jobs found for '{search_term}' in '{location}'")
+                    logging.warning("    ⚠️ No jobs found for '%s' in '%s'", search_term, location)
             except Exception as e:
-                print(f"    ❌ Failed: {e} for '{search_term}' in '{location}'")
+                logging.error("    ❌ Failed: %s for '%s' in '%s'", e, search_term, location)
                 continue
     
     # Combine results
     if not all_jobs:
-        print("\n🚫 No job listings were found.")
+        logging.warning("\n🚫 No job listings were found.")
         return None
 
     df = pd.concat(all_jobs, ignore_index=True).drop_duplicates(
         subset=["title", "company", "location"]
     )
     
-    print(f"\n📊 Scraping Summary:")
-    print(f"  Total jobs found: {len(df)}")
-    print(f"  Unique jobs after deduplication: {len(df)}")
-    print(f"  Search terms processed: {len(search_terms)}")
-    print(f"  Locations processed: {len(locations)}")
+    logging.info("\n📊 Scraping Summary:")
+    logging.info("  Total jobs found: %d", len(df))
+    logging.info("  Unique jobs after deduplication: %d", len(df))
+    logging.info("  Search terms processed: %d", len(search_terms))
+    logging.info("  Locations processed: %d", len(locations))
     
     return df
 
 def save_to_csv(df, output_path="jobs_raw.csv"):
     """Save jobs to CSV file"""
-    print(f"\n💾 Saving jobs to {output_path}...")
+    logging.info("\n💾 Saving jobs to %s...", output_path)
     
     try:
         df.to_csv(output_path, index=False)
-        print(f"✅ Successfully saved {len(df)} jobs to {output_path}")
+        logging.info("✅ Successfully saved %d jobs to %s", len(df), output_path)
         return True
     except Exception as e:
-        print(f"❌ Failed to save CSV: {e}")
+        logging.error("❌ Failed to save CSV: %s", e)
         return False
 
 def upload_to_gdrive(local_file, remote_folder="gdrive:AI-Jobs"):
     """Upload file to Google Drive using rclone"""
-    print(f"\n☁️ Uploading {local_file} to Google Drive...")
+    logging.info("\n☁️ Uploading %s to Google Drive...", local_file)
     
     try:
         # Check if rclone is installed
         result = subprocess.run(["rclone", "version"], capture_output=True, text=True)
         if result.returncode != 0:
-            print("❌ rclone is not installed locally. Skipping Google Drive upload.")
-            print("   This is normal when running locally - upload will happen in GitHub Actions.")
+            logging.warning("❌ rclone is not installed locally. Skipping Google Drive upload.")
+            logging.warning("   This is normal when running locally - upload will happen in GitHub Actions.")
             return False
         
         # Upload file
         cmd = ["rclone", "copy", local_file, remote_folder, "--progress"]
-        print(f"Running: {' '.join(cmd)}")
+        logging.info("Running: %s", ' '.join(cmd))
         
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode == 0:
-            print(f"✅ Successfully uploaded {local_file} to {remote_folder}")
+            logging.info("✅ Successfully uploaded %s to %s", local_file, remote_folder)
             return True
         else:
-            print(f"❌ Upload failed: {result.stderr}")
+            logging.error("❌ Upload failed: %s", result.stderr)
             return False
             
     except FileNotFoundError:
-        print("❌ rclone is not installed locally. Skipping Google Drive upload.")
-        print("   This is normal when running locally - upload will happen in GitHub Actions.")
+        logging.warning("❌ rclone is not installed locally. Skipping Google Drive upload.")
+        logging.warning("   This is normal when running locally - upload will happen in GitHub Actions.")
         return False
     except Exception as e:
-        print(f"❌ Upload error: {e}")
+        logging.error("❌ Upload error: %s", e)
         return False
 
 def main():
     """Main scraping workflow"""
-    print("🔍 Job Scraping Workflow (Local)")
-    print("=" * 50)
+    logging.info("🔍 Job Scraping Workflow (Local)")
+    logging.info("=" * 50)
     
     # Step 1: Load configuration
     config = load_config()
@@ -228,39 +233,33 @@ def main():
         sys.exit(1)
     
     # Step 2: Scrape jobs
-    df = scrape_jobs_with_progress(config)
-    if df is None:
-        print("❌ No jobs found. Exiting.")
-        sys.exit(1)
+    jobs_df = scrape_jobs_with_progress(config)
+    
+    if jobs_df is None or jobs_df.empty:
+        logging.warning("⏹️ No jobs were scraped, exiting.")
+        sys.exit(0)
     
     # Step 3: Save to CSV
-    output_file = "jobs_raw.csv"
-    if not save_to_csv(df, output_file):
+    output_file = config.get("output_file", "jobs_raw.csv")
+    if not save_to_csv(jobs_df, output_file):
         sys.exit(1)
     
-    # Step 4: Try to upload to Google Drive (optional for local runs)
-    upload_success = upload_to_gdrive(output_file)
+    # Step 4: Upload to Google Drive (optional)
+    if config.get("upload_to_gdrive", False):
+        gdrive_folder = config.get("gdrive_folder", "gdrive:AI-Jobs")
+        upload_to_gdrive(output_file, gdrive_folder)
+
+    logging.info("\n" + "=" * 50)
+    logging.info("🎉 SCRAPING COMPLETED!")
+    logging.info("=" * 50)
+    logging.info("📊 Total jobs scraped: %d", len(jobs_df))
+    logging.info("📄 Local file: %s", output_file)
+    if not config.get("upload_to_gdrive", False):
+        logging.info("☁️ Upload skipped as per config.")
+    elif config.get("upload_to_gdrive", False) and 'rclone' not in os.popen('command -v rclone').read():
+         logging.info("☁️ Upload skipped (rclone not available locally)")
     
-    # Final summary
-    print("\n" + "=" * 50)
-    print("🎉 SCRAPING COMPLETED!")
-    print("=" * 50)
-    print(f"📊 Total jobs scraped: {len(df)}")
-    print(f"📄 Local file: {output_file}")
-    if upload_success:
-        print(f"☁️ Uploaded to: gdrive:AI-Jobs/{output_file}")
-    else:
-        print("☁️ Upload skipped (rclone not available locally)")
-    print("\n📝 Next step: Run the Google Colab notebook to process with LLM")
+    logging.info("📝 Next step: Run the Google Colab notebook to process with LLM")
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n\n⏹️ Scraping stopped by user")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ Scraping failed: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1) 
+    main() 
