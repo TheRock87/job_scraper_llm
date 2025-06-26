@@ -121,6 +121,9 @@ def scrape_jobs_with_progress(config):
             elif "CANADA" in location.upper():
                 country_indeed = "Canada"
                 location_clean = location.replace("Canada", "").strip(", ").strip()
+            elif "IRELAND" in location.upper():
+                country_indeed = "Ireland"
+                location_clean = location.replace("Ireland", "").strip(", ").strip()
             else:
                 country_indeed = None
                 location_clean = location

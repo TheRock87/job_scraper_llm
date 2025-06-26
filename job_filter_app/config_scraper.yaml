@@ -57,6 +57,14 @@ locations:
   - Birmingham, UK
   - Bristol, UK
   - Nottingham, UK
+  - Glasgow, UK
+  - Aberdeen, UK
+  - Dundee, UK
+  # Ireland
+  - Dublin, Ireland
+  - Cork, Ireland
+  - Galway, Ireland
+  - Limerick, Ireland
   # Austria
   - Vienna, Austria
   - Linz, Austria
