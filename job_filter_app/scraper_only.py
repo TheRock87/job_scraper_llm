@@ -83,43 +83,43 @@ def scrape_jobs_with_progress(config):
         for location in locations:
             current_search += 1
             print(f"\n[{current_search}/{total_searches}] 🔍 Scraping '{search_term}' in {location}")
-            
+            print(f"    → Starting search for '{search_term}' in '{location}'...")
             # Fix: Properly format country strings
             if "UAE" in location.upper() or "United Arab Emirates" in location:
-                country_indeed = "United Arab Emirates"
+                country_indeed = "united arab emirates"
                 location_clean = location.replace("UAE", "").replace("United Arab Emirates", "").strip(", ").strip()
             elif "EGYPT" in location.upper():
-                country_indeed = "Egypt"
+                country_indeed = "egypt"
                 location_clean = location.replace("EGYPT", "").strip(", ").strip()
             elif "SAUDI ARABIA" in location.upper():
-                country_indeed = "Saudi Arabia"
+                country_indeed = "saudi arabia"
                 location_clean = location.replace("Saudi Arabia", "").strip(", ").strip()
             elif "KUWAIT" in location.upper():
-                country_indeed = "Kuwait"
+                country_indeed = "kuwait"
                 location_clean = location.replace("Kuwait", "").strip(", ").strip()
             elif "QATAR" in location.upper():
-                country_indeed = "Qatar"
+                country_indeed = "qatar"
                 location_clean = location.replace("Qatar", "").strip(", ").strip()
             elif "OMAN" in location.upper():
-                country_indeed = "Oman"
+                country_indeed = "oman"
                 location_clean = location.replace("Oman", "").strip(", ").strip()
             elif "BAHRAIN" in location.upper():
-                country_indeed = "Bahrain"
+                country_indeed = "bahrain"
                 location_clean = location.replace("Bahrain", "").strip(", ").strip()
             elif "GERMANY" in location.upper():
-                country_indeed = "Germany"
+                country_indeed = "germany"
                 location_clean = location.replace("Germany", "").strip(", ").strip()
             elif "SPAIN" in location.upper():
-                country_indeed = "Spain"
+                country_indeed = "spain"
                 location_clean = location.replace("Spain", "").strip(", ").strip()
             elif "UK" in location.upper() or "UNITED KINGDOM" in location.upper():
-                country_indeed = "UK"
+                country_indeed = "united kingdom"
                 location_clean = location.replace("UK", "").replace("United Kingdom", "").strip(", ").strip()
             elif "AUSTRIA" in location.upper():
-                country_indeed = "Austria"
+                country_indeed = "austria"
                 location_clean = location.replace("Austria", "").strip(", ").strip()
             elif "CANADA" in location.upper():
-                country_indeed = "Canada"
+                country_indeed = "canada"
                 location_clean = location.replace("Canada", "").strip(", ").strip()
             elif "IRELAND" in location.upper():
                 country_indeed = "Ireland"
@@ -140,23 +140,19 @@ def scrape_jobs_with_progress(config):
                     'description_format': description_format,
                     'verbose': 1,
                 }
-                
                 # Add country_indeed only if it's not None
                 if country_indeed:
                     scrape_params['country_indeed'] = country_indeed
-                
                 jobs = scrape_jobs(**scrape_params)
-                
                 if not jobs.empty:
                     jobs["search_term"] = search_term
                     jobs["search_location"] = location
                     all_jobs.append(jobs)
-                    print(f"  ✅ Found {len(jobs)} jobs")
+                    print(f"    ✅ Finished: {len(jobs)} jobs found for '{search_term}' in '{location}'")
                 else:
-                    print(f"  ⚠️ No jobs found")
-                    
+                    print(f"    ⚠️ No jobs found for '{search_term}' in '{location}'")
             except Exception as e:
-                print(f"  ❌ Failed: {e}")
+                print(f"    ❌ Failed: {e} for '{search_term}' in '{location}'")
                 continue
     
     # Combine results
