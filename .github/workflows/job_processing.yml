@@ -117,8 +117,6 @@ jobs:
       run: |
         echo "Testing rclone connectivity..."
         rclone about gdrive:
-        echo "Listing root directory:"
-        rclone ls gdrive:/
     
     - name: ☁️ Upload to Google Drive
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
