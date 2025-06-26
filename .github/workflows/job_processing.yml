@@ -149,11 +149,6 @@ jobs:
         echo "=================================================="
         rclone ls gdrive:AI-Jobs/
         echo "=================================================="
-        echo ""
-        echo "📁 Listing root directory for comparison:"
-        echo "=================================================="
-        rclone ls gdrive:/
-        echo "=================================================="
     
     - name: 📊 Create summary comment
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
