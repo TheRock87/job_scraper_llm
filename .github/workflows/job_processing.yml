@@ -101,36 +101,46 @@ jobs:
         token = 
         EOF
     
+    - name: 📂 Debug: Test rclone connectivity and list root
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        echo "🔍 Testing rclone connectivity..."
+        rclone about gdrive:
+        echo "📁 Listing root directory:"
+        rclone ls gdrive:/
+      env:
+        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+
     - name: ☁️ Upload to Google Drive
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
       run: |
         cd job_filter_app
-        
         # Upload processed files to Google Drive
         echo "☁️ Uploading processed results to Google Drive..."
-        
         # Upload processed CSV
         if [ -f "processed_jobs/processed_jobs.csv" ]; then
           rclone copy processed_jobs/processed_jobs.csv gdrive:AI-Jobs/ --progress
           echo "✅ Uploaded processed_jobs.csv"
         fi
-        
-        # Upload HTML file
-        if [ -f "processed_jobs/filtered_jobs.html" ]; then
-          rclone copy processed_jobs/filtered_jobs.html gdrive:AI-Jobs/ --progress
-          echo "✅ Uploaded filtered_jobs.html"
-        fi
-        
         # Upload summary
         if [ -f "processed_jobs/processing_summary.json" ]; then
           rclone copy processed_jobs/processing_summary.json gdrive:AI-Jobs/ --progress
           echo "✅ Uploaded processing_summary.json"
         fi
-        
         echo "🎉 All files uploaded to Google Drive AI-Jobs folder!"
       env:
         RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
-    
+
+    - name: 📂 Debug: List files in Google Drive AI-Jobs folder
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        echo "📁 Listing AI-Jobs folder contents:"
+        rclone ls gdrive:AI-Jobs/
+        echo "📁 Listing root directory again:"
+        rclone ls gdrive:/
+      env:
+        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+
     - name: 📊 Create summary comment
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
       run: |
