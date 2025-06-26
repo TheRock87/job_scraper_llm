@@ -7,7 +7,7 @@ on:
       force_process:
         description: 'Force process all jobs (ignore new jobs only)'
         required: false
-        default: 'false'
+        default: false
         type: boolean
   
   # Trigger on schedule (daily at 9 AM UTC)
@@ -33,6 +33,10 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Full history for job tracking
+    
+    - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
+      run: |
+        python job_filter_app/scraper_only.py
     
     - name: 🐍 Set up Python
       uses: actions/setup-python@v4
