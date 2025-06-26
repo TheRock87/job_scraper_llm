@@ -1,5 +1,8 @@
 name: 🤖 AI Job Processing Workflow
 
+permissions:
+  contents: write
+
 on:
   # Manual trigger
   workflow_dispatch:
