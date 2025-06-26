@@ -1,0 +1,283 @@
+{
+  "document": {
+    "title": "Форма для управления бизнес-процессами",
+    "description": "Структура форм для сбора обратной связи, квалификации лидов и автоматизации процесса онбординга."
+  },
+  "explanation": "Данная структура форм состоит из корневой формы, которая связывает все подформы. Корневая форма собирает общую информацию и направляет пользователей к соответствующим подформам для выполнения конкретных задач. Это позволяет эффективно собирать обратную связь, квалифицировать лидов и автоматизировать процесс онбординга, что соответствует бизнес-целям компании.",
+  "forms": [
+    {
+      "name": "root_form",
+      "title": "Основная форма",
+      "description": "Центральная форма для управления процессами и направления к подформам.",
+      "is_root_form": true,
+      "fields": [
+        {
+          "name": "business_name",
+          "title": "Название компании",
+          "description": "Введите название вашей компании.",
+          "type": "text",
+          "required": true,
+          "order": 1,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "contact_email",
+          "title": "Контактный email",
+          "description": "Введите ваш контактный email.",
+          "type": "email",
+          "required": true,
+          "order": 2,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "contact_phone",
+          "title": "Контактный телефон",
+          "description": "Введите ваш контактный номер телефона.",
+          "type": "phone",
+          "required": false,
+          "order": 3,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "feedback_form",
+          "title": "Форма обратной связи",
+          "description": "Перейдите к форме для сбора обратной связи.",
+          "type": "relation",
+          "required": false,
+          "order": 4,
+          "settings": {
+            "display_mode": "default",
+            "expanded": false,
+            "placeholder": "",
+            "helpText": ""
+          },
+          "relation": {
+            "target_form": "feedback_form",
+            "is_multiple": false
+          }
+        },
+        {
+          "name": "lead_qualification_form",
+          "title": "Форма квалификации лидов",
+          "description": "Перейдите к форме для квалификации лидов.",
+          "type": "relation",
+          "required": false,
+          "order": 5,
+          "settings": {
+            "display_mode": "default",
+            "expanded": false,
+            "placeholder": "",
+            "helpText": ""
+          },
+          "relation": {
+            "target_form": "lead_qualification_form",
+            "is_multiple": false
+          }
+        },
+        {
+          "name": "onboarding_form",
+          "title": "Форма онбординга",
+          "description": "Перейдите к форме для автоматизации онбординга.",
+          "type": "relation",
+          "required": false,
+          "order": 6,
+          "settings": {
+            "display_mode": "default",
+            "expanded": false,
+            "placeholder": "",
+            "helpText": ""
+          },
+          "relation": {
+            "target_form": "onboarding_form",
+            "is_multiple": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback_form",
+      "title": "Форма обратной связи",
+      "description": "Соберите обратную связь о новых функциях продукта.",
+      "is_root_form": false,
+      "fields": [
+        {
+          "name": "feature_feedback",
+          "title": "Обратная связь по функциям",
+          "description": "Опишите ваше мнение о новых функциях продукта.",
+          "type": "text",
+          "required": true,
+          "order": 1,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "satisfaction_rating",
+          "title": "Оценка удовлетворенности",
+          "description": "Оцените вашу удовлетворенность новыми функциями.",
+          "type": "select",
+          "required": true,
+          "order": 2,
+          "settings": {
+            "options": [
+              {
+                "label": "Очень неудовлетворен",
+                "value": "very_dissatisfied"
+              },
+              {
+                "label": "Неудовлетворен",
+                "value": "dissatisfied"
+              },
+              {
+                "label": "Нейтрально",
+                "value": "neutral"
+              },
+              {
+                "label": "Удовлетворен",
+                "value": "satisfied"
+              },
+              {
+                "label": "Очень удовлетворен",
+                "value": "very_satisfied"
+              }
+            ],
+            "format": "dropdown",
+            "allowClear": true,
+            "placeholder": "",
+            "helpText": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "lead_qualification_form",
+      "title": "Форма квалификации лидов",
+      "description": "Соберите информацию для квалификации потенциальных клиентов.",
+      "is_root_form": false,
+      "fields": [
+        {
+          "name": "lead_name",
+          "title": "Имя лида",
+          "description": "Введите имя потенциального клиента.",
+          "type": "text",
+          "required": true,
+          "order": 1,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "lead_email",
+          "title": "Email лида",
+          "description": "Введите email потенциального клиента.",
+          "type": "email",
+          "required": true,
+          "order": 2,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "lead_interest",
+          "title": "Интерес лида",
+          "description": "Выберите интерес лида к продукту.",
+          "type": "select",
+          "required": true,
+          "order": 3,
+          "settings": {
+            "options": [
+              {
+                "label": "Высокий интерес",
+                "value": "high_interest"
+              },
+              {
+                "label": "Средний интерес",
+                "value": "medium_interest"
+              },
+              {
+                "label": "Низкий интерес",
+                "value": "low_interest"
+              }
+            ],
+            "format": "dropdown",
+            "allowClear": true,
+            "placeholder": "",
+            "helpText": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "onboarding_form",
+      "title": "Форма онбординга",
+      "description": "Автоматизируйте процесс онбординга новых пользователей.",
+      "is_root_form": false,
+      "fields": [
+        {
+          "name": "user_name",
+          "title": "Имя пользователя",
+          "description": "Введите имя нового пользователя.",
+          "type": "text",
+          "required": true,
+          "order": 1,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "user_email",
+          "title": "Email пользователя",
+          "description": "Введите email нового пользователя.",
+          "type": "email",
+          "required": true,
+          "order": 2,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "onboarding_steps_completed",
+          "title": "Завершенные шаги онбординга",
+          "description": "Выберите шаги, которые пользователь уже завершил.",
+          "type": "multiselect",
+          "required": false,
+          "order": 3,
+          "settings": {
+            "options": [
+              {
+                "label": "Создание аккаунта",
+                "value": "account_creation"
+              },
+              {
+                "label": "Заполнение профиля",
+                "value": "profile_completion"
+              },
+              {
+                "label": "Обучение",
+                "value": "training"
+              }
+            ],
+            "format": "dropdown",
+            "allowClear": true,
+            "placeholder": "",
+            "helpText": ""
+          }
+        }
+      ]
+    }
+  ]
+}

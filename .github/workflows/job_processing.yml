@@ -1,0 +1,292 @@
+name: 🤖 AI Job Processing Workflow
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      force_process:
+        description: 'Force process all jobs (ignore new jobs only)'
+        required: false
+        default: 'false'
+        type: boolean
+  
+  # Trigger on schedule (daily at 9 AM UTC)
+  schedule:
+    - cron: '0 9 * * *'
+  
+  # Trigger when jobs_raw.csv is updated
+  push:
+    paths:
+      - 'job_filter_app/jobs_raw.csv'
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  process-jobs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for job tracking
+    
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas pyyaml requests
+    
+    - name: 🔍 Process and identify new jobs
+      id: process-jobs
+      run: |
+        cd job_filter_app
+        python github_actions_workflow.py
+      env:
+        CSV_FILE: jobs_raw.csv
+        HISTORY_FILE: job_history.json
+        OUTPUT_DIR: processed_jobs
+    
+    - name: 📊 Display processing results
+      run: |
+        echo "📈 New jobs found: ${{ steps.process-jobs.outputs.new_jobs_count }}"
+        echo "📋 Total jobs: ${{ steps.process-jobs.outputs.total_jobs_count }}"
+        echo "🆕 Has new jobs: ${{ steps.process-jobs.outputs.has_new_jobs }}"
+    
+    - name: 🚫 Skip if no new jobs (unless forced)
+      if: steps.process-jobs.outputs.has_new_jobs != 'true' && github.event.inputs.force_process != 'true'
+      run: |
+        echo "⏭️ No new jobs found, skipping LLM processing"
+        exit 0
+    
+    - name: 🤖 Setup Google Colab environment
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        pip install google-colab transformers torch accelerate tqdm
+    
+    - name: 📝 Create Colab processing script
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        cat > process_jobs_colab.py << 'EOF'
+        #!/usr/bin/env python3
+        """
+        Automated job processing script for GitHub Actions
+        """
+        
+        import pandas as pd
+        import os
+        from transformers import AutoTokenizer, AutoModelForCausalLM
+        import torch
+        from tqdm import tqdm
+        import json
+        from datetime import datetime
+        
+        def load_jobs():
+            """Load jobs to process"""
+            jobs_file = os.environ.get('JOBS_FILE', 'processed_jobs/all_jobs.csv')
+            if os.path.exists(jobs_file):
+                return pd.read_csv(jobs_file)
+            return None
+        
+        def setup_model():
+            """Setup Mistral model"""
+            print("🔄 Loading Mistral-7B model...")
+            model_name = "mistralai/Mistral-7B-Instruct-v0.2"
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                torch_dtype=torch.float16,
+                device_map="auto",
+                load_in_8bit=True
+            )
+            return tokenizer, model
+        
+        def classify_job(row, tokenizer, model):
+            """Classify a single job"""
+            prompt = f'''You are a job relevance filter AI. Check if the following job is relevant to the search: "Ai engineer" OR "Machine learning engineer" OR "Data scientist" and not for seniors.
+        Title: {row.get("title", "")}
+        Company: {row.get("company", "")}
+        Location: {row.get("location", "")}
+        Description: {str(row.get("description", ""))[:2000]}
+        Is this job related? Respond with only 'yes' or 'no'.'''
+            
+            inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048).to(model.device)
+            with torch.no_grad():
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=10,
+                    temperature=0.1,
+                    do_sample=True,
+                    pad_token_id=tokenizer.eos_token_id
+                )
+            response = tokenizer.decode(outputs[0], skip_special_tokens=True).lower()
+            return 'Yes' if 'yes' in response else 'No' if 'no' in response else 'Uncertain'
+        
+        def create_html_output(df):
+            """Create HTML output"""
+            relevant = df[df['Is_Junior_AI_Job'] == 'Yes'].copy()
+            if relevant.empty:
+                return '<h2>No relevant jobs found.</h2>'
+            
+            html = ['''<!DOCTYPE html><html><head><meta charset="utf-8"><title>AI Job Opportunities</title>
+        <style>body{font-family:sans-serif;margin:20px;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #ddd;padding:8px;}th{background:#667eea;color:#fff;cursor:pointer;}tr:nth-child(even){background:#f2f2f2;}a{color:#667eea;}</style>
+        <script>function sortTable(n){var t=document.getElementById('jobTable'),r=true,s,i,o,f,c=0;while(r){r=false;s=t.rows;for(i=1;i<s.length-1;i++){o=false;f=s[i].getElementsByTagName('TD')[n];c=s[i+1].getElementsByTagName('TD')[n];if(f.innerHTML.toLowerCase()>c.innerHTML.toLowerCase()){o=true;break;}}if(o){s[i].parentNode.insertBefore(s[i+1],s[i]);r=true;}}}</script>
+        </head><body><h2>🤖 AI Job Opportunities</h2><p>Generated on: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '''</p><table id="jobTable"><thead><tr><th onclick="sortTable(0)">Title</th><th onclick="sortTable(1)">Company</th><th onclick="sortTable(2)">Location</th><th>Description</th></tr></thead><tbody>"]
+            
+            for _, row in relevant.iterrows():
+                html.append(f'<tr><td><a href="{row.get("job_url", "#")}" target="_blank">{row.get("title", "")}</a></td><td>{row.get("company", "")}</td><td>{row.get("location", "")}</td><td>{str(row.get("description", ""))[:200]}</td></tr>')
+            
+            html.append('</tbody></table></body></html>')
+            return ''.join(html)
+        
+        def main():
+            """Main processing function"""
+            print("🚀 Starting automated job processing...")
+            
+            # Load jobs
+            df = load_jobs()
+            if df is None:
+                print("❌ No jobs file found")
+                return
+            
+            print(f"📊 Processing {len(df)} jobs...")
+            
+            # Setup model
+            tokenizer, model = setup_model()
+            
+            # Classify jobs
+            df['Is_Junior_AI_Job'] = [classify_job(row, tokenizer, model) for _, row in tqdm(df.iterrows(), total=len(df))]
+            
+            # Create output
+            html_content = create_html_output(df)
+            
+            # Save results
+            output_dir = 'processed_jobs'
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Save processed CSV
+            processed_csv = os.path.join(output_dir, 'processed_jobs.csv')
+            df.to_csv(processed_csv, index=False)
+            
+            # Save HTML
+            html_file = os.path.join(output_dir, 'filtered_jobs.html')
+            with open(html_file, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            
+            # Create summary
+            relevant_count = len(df[df['Is_Junior_AI_Job'] == 'Yes'])
+            summary = {
+                'timestamp': datetime.now().isoformat(),
+                'total_jobs': len(df),
+                'relevant_jobs': relevant_count,
+                'relevance_rate': round(relevant_count / len(df) * 100, 1) if len(df) > 0 else 0
+            }
+            
+            summary_file = os.path.join(output_dir, 'processing_summary.json')
+            with open(summary_file, 'w') as f:
+                json.dump(summary, f, indent=2)
+            
+            print(f"✅ Processing complete!")
+            print(f"📊 Results: {relevant_count}/{len(df)} relevant jobs ({summary['relevance_rate']}%)")
+            print(f"📄 Files saved to: {output_dir}/")
+        
+        if __name__ == "__main__":
+            main()
+        EOF
+    
+    - name: 🤖 Process jobs with LLM
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        cd job_filter_app
+        python process_jobs_colab.py
+      env:
+        JOBS_FILE: processed_jobs/all_jobs.csv
+    
+    - name: 📤 Upload results as artifacts
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: job-processing-results
+        path: |
+          job_filter_app/processed_jobs/
+          job_filter_app/job_history.json
+        retention-days: 30
+    
+    - name: ☁️ Setup rclone for Google Drive upload
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        # Install rclone
+        curl https://rclone.org/install.sh | sudo bash
+        
+        # Create rclone config directory
+        mkdir -p ~/.config/rclone
+        
+        # Create minimal rclone config (will be overridden by secrets)
+        cat > ~/.config/rclone/rclone.conf << EOF
+        [gdrive]
+        type = drive
+        scope = drive
+        token = 
+        EOF
+    
+    - name: ☁️ Upload to Google Drive
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        cd job_filter_app
+        
+        # Upload processed files to Google Drive
+        echo "☁️ Uploading processed results to Google Drive..."
+        
+        # Upload processed CSV
+        if [ -f "processed_jobs/processed_jobs.csv" ]; then
+          rclone copy processed_jobs/processed_jobs.csv gdrive:AI-Jobs/ --progress
+          echo "✅ Uploaded processed_jobs.csv"
+        fi
+        
+        # Upload HTML file
+        if [ -f "processed_jobs/filtered_jobs.html" ]; then
+          rclone copy processed_jobs/filtered_jobs.html gdrive:AI-Jobs/ --progress
+          echo "✅ Uploaded filtered_jobs.html"
+        fi
+        
+        # Upload summary
+        if [ -f "processed_jobs/processing_summary.json" ]; then
+          rclone copy processed_jobs/processing_summary.json gdrive:AI-Jobs/ --progress
+          echo "✅ Uploaded processing_summary.json"
+        fi
+        
+        echo "🎉 All files uploaded to Google Drive AI-Jobs folder!"
+      env:
+        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+    
+    - name: 📊 Create summary comment
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        echo "## 🤖 Job Processing Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Total jobs processed:** ${{ steps.process-jobs.outputs.total_jobs_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **New jobs found:** ${{ steps.process-jobs.outputs.new_jobs_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Processing triggered:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📁 **Artifacts available:**" >> $GITHUB_STEP_SUMMARY
+        echo "- `processed_jobs/processed_jobs.csv` - All jobs with classifications" >> $GITHUB_STEP_SUMMARY
+        echo "- `processed_jobs/filtered_jobs.html` - Interactive HTML table" >> $GITHUB_STEP_SUMMARY
+        echo "- `processed_jobs/processing_summary.json` - Processing statistics" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "☁️ **Google Drive:** Files uploaded to AI-Jobs folder" >> $GITHUB_STEP_SUMMARY
+    
+    - name: 🔄 Commit updated history
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add job_filter_app/job_history.json
+        git commit -m "📊 Update job history - ${{ steps.process-jobs.outputs.new_jobs_count }} new jobs" || echo "No changes to commit"
+        git push 

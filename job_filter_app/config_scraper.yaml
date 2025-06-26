@@ -1,0 +1,27 @@
+# Simplified config for job scraping with Google Drive integration
+search_term: '"Ai engineer" OR "Machine learning engineer" OR "Data scientist"'
+results_wanted: 30
+hours_old: 336
+linkedin_fetch_description: true
+description_format: markdown
+
+site_name:
+  - linkedin
+  - indeed
+  # - bayt
+
+locations:
+  - Cairo, Egypt
+  - Giza, Egypt
+  - Dubai, UAE
+  - Abu Dhabi, UAE
+  - Sharjah, UAE
+
+# Output settings
+output_file: jobs_raw.csv
+gdrive_folder: gdrive:AI-Jobs
+upload_to_gdrive: true
+
+# Cron settings (optional)
+run_at_startup: true
+cron_schedule: "0 8 * * *"  # Run daily at 8 AM 

@@ -1,0 +1,5 @@
+[gdrive]
+type = drive
+scope = drive
+token = {"access_token":"ya29.a0AS3H6NzWZ8YSh8MEIRFeoIskwZNDZ51fLJ3iKPkcF0slgMsYaI1YX6CAs9-rZD_9OHfEBjg1-hzuBKJCjZtoeVaDM-WVgrn3LgRksFFAd2lh5oVQ4DNBQGSzLuCAvK53-N2RlAz-JioayFR3W-tY6xcYk7vtezvzqVcuuwYiaCgYKASQSARASFQHGX2Mi-D9W9F9L1UA4CzUDSgUG6Q0175","token_type":"Bearer","refresh_token":"1//03qohig9BBe-KCgYIARAAGAMSNwF-L9IrtXb13-Yfo_-1JzE00GwC1Ic62O9zktB89iabZz8h7P5K41wHUwgkTrPy1kuhq3RcmOQ","expiry":"2025-06-26T05:59:58.34761855+03:00","expires_in":3599}
+

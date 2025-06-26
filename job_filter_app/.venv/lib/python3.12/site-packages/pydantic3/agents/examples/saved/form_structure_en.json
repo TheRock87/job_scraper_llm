@@ -1,0 +1,323 @@
+{
+  "document": {
+    "title": "Business Application Form Structure",
+    "description": "A comprehensive form structure for automating customer feedback collection through AI-powered forms."
+  },
+  "explanation": "The form structure consists of a root form that serves as the central hub for collecting high-level business information and connecting to subforms. Each subform focuses on specific aspects of the business goals, such as customer satisfaction tracking, feedback analysis, and user onboarding. The root form uses relation fields to link to these subforms, ensuring a logical and organized hierarchy. This structure aligns with the business goals by enabling efficient data collection and analysis.",
+  "forms": [
+    {
+      "name": "business_information",
+      "title": "Business Information",
+      "description": "Collect general information about the business and connect to detailed subforms.",
+      "is_root_form": true,
+      "fields": [
+        {
+          "name": "business_name",
+          "title": "Business Name",
+          "description": "Enter the name of your business.",
+          "type": "text",
+          "required": true,
+          "order": 1,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "industry",
+          "title": "Industry",
+          "description": "Select the industry your business operates in.",
+          "type": "select",
+          "required": true,
+          "order": 2,
+          "settings": {
+            "options": [
+              {
+                "label": "Software as a Service (SaaS)",
+                "value": "saas"
+              },
+              {
+                "label": "E-commerce",
+                "value": "e_commerce"
+              },
+              {
+                "label": "Healthcare",
+                "value": "healthcare"
+              },
+              {
+                "label": "Finance",
+                "value": "finance"
+              },
+              {
+                "label": "Other",
+                "value": "other"
+              }
+            ],
+            "format": "dropdown",
+            "allowClear": true,
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "website",
+          "title": "Website",
+          "description": "Provide the URL of your business website.",
+          "type": "url",
+          "required": false,
+          "order": 3,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "customer_feedback_form",
+          "title": "Customer Feedback Form",
+          "description": "Link to the form for collecting customer feedback.",
+          "type": "relation",
+          "required": true,
+          "order": 4,
+          "settings": {
+            "display_mode": "default",
+            "expanded": false,
+            "placeholder": "",
+            "helpText": ""
+          },
+          "relation": {
+            "target_form": "customer_feedback",
+            "is_multiple": false
+          }
+        },
+        {
+          "name": "feedback_analysis_form",
+          "title": "Feedback Analysis Form",
+          "description": "Link to the form for analyzing feedback data.",
+          "type": "relation",
+          "required": true,
+          "order": 5,
+          "settings": {
+            "display_mode": "default",
+            "expanded": false,
+            "placeholder": "",
+            "helpText": ""
+          },
+          "relation": {
+            "target_form": "feedback_analysis",
+            "is_multiple": false
+          }
+        },
+        {
+          "name": "user_onboarding_form",
+          "title": "User Onboarding Form",
+          "description": "Link to the form for collecting user onboarding details.",
+          "type": "relation",
+          "required": true,
+          "order": 6,
+          "settings": {
+            "display_mode": "default",
+            "expanded": false,
+            "placeholder": "",
+            "helpText": ""
+          },
+          "relation": {
+            "target_form": "user_onboarding",
+            "is_multiple": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "customer_feedback",
+      "title": "Customer Feedback",
+      "description": "Collect feedback from customers about their experience.",
+      "is_root_form": false,
+      "fields": [
+        {
+          "name": "customer_name",
+          "title": "Customer Name",
+          "description": "Enter the name of the customer providing feedback.",
+          "type": "text",
+          "required": true,
+          "order": 1,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "feedback_date",
+          "title": "Feedback Date",
+          "description": "Select the date the feedback was provided.",
+          "type": "date",
+          "required": true,
+          "order": 2,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "feedback_rating",
+          "title": "Feedback Rating",
+          "description": "Rate the customer's overall experience.",
+          "type": "select",
+          "required": true,
+          "order": 3,
+          "settings": {
+            "options": [
+              {
+                "label": "Very Satisfied",
+                "value": "very_satisfied"
+              },
+              {
+                "label": "Satisfied",
+                "value": "satisfied"
+              },
+              {
+                "label": "Neutral",
+                "value": "neutral"
+              },
+              {
+                "label": "Dissatisfied",
+                "value": "dissatisfied"
+              },
+              {
+                "label": "Very Dissatisfied",
+                "value": "very_dissatisfied"
+              }
+            ],
+            "format": "dropdown",
+            "allowClear": true,
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "feedback_comments",
+          "title": "Feedback Comments",
+          "description": "Provide additional comments or suggestions.",
+          "type": "text",
+          "required": false,
+          "order": 4,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback_analysis",
+      "title": "Feedback Analysis",
+      "description": "Analyze the feedback data collected from customers.",
+      "is_root_form": false,
+      "fields": [
+        {
+          "name": "analysis_date",
+          "title": "Analysis Date",
+          "description": "Enter the date of the feedback analysis.",
+          "type": "date",
+          "required": true,
+          "order": 1,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "total_feedbacks",
+          "title": "Total Feedbacks",
+          "description": "Enter the total number of feedbacks analyzed.",
+          "type": "number",
+          "required": true,
+          "order": 2,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "positive_feedback_percentage",
+          "title": "Positive Feedback Percentage",
+          "description": "Enter the percentage of positive feedback.",
+          "type": "number",
+          "required": true,
+          "order": 3,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "key_insights",
+          "title": "Key Insights",
+          "description": "Summarize the key insights from the feedback analysis.",
+          "type": "text",
+          "required": false,
+          "order": 4,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "user_onboarding",
+      "title": "User Onboarding",
+      "description": "Collect details about the user onboarding process.",
+      "is_root_form": false,
+      "fields": [
+        {
+          "name": "user_name",
+          "title": "User Name",
+          "description": "Enter the name of the user being onboarded.",
+          "type": "text",
+          "required": true,
+          "order": 1,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "onboarding_date",
+          "title": "Onboarding Date",
+          "description": "Select the date the user was onboarded.",
+          "type": "date",
+          "required": true,
+          "order": 2,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "onboarding_steps_completed",
+          "title": "Onboarding Steps Completed",
+          "description": "Indicate whether the user completed all onboarding steps.",
+          "type": "boolean",
+          "required": true,
+          "order": 3,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        },
+        {
+          "name": "onboarding_feedback",
+          "title": "Onboarding Feedback",
+          "description": "Provide feedback about the onboarding process.",
+          "type": "text",
+          "required": false,
+          "order": 4,
+          "settings": {
+            "placeholder": "",
+            "helpText": ""
+          }
+        }
+      ]
+    }
+  ]
+}

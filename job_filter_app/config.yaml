@@ -1,0 +1,45 @@
+search_term: '"Ai engineer" OR "Machine learning engineer" OR "Data scientist"'
+results_wanted: 30
+hours_old: 336
+linkedin_fetch_description: true
+description_format: markdown
+
+site_name:
+  - linkedin
+  - indeed
+  # - bayt
+
+locations:
+  - Cairo, Egypt
+  - Giza, Egypt
+  - Dubai, UAE
+  - Abu Dhabi, UAE
+  - Sharjah, UAE
+
+use_llm_filter: true
+llm_prompt_template: |
+  You are a job relevance filter AI. Check if the following job is relevant to the search: {search_term} and not for seniors.
+  Title: {title}
+  Company: {company}
+  Location: {location}
+  Description: {description}
+  Is this job related? Respond with only 'yes' or 'no'.
+
+llm_model: mistralai/mistral-small-3.2-24b-instruct:free
+
+llm_use_local: true
+llm_local_model_path: /media/hossam/NewVolume/job_scrape/jobspy_project_clean/JobSpy/job_filter_app/ollama_models
+llm_local_model_name: mistral:latest  # The name as used by Ollama
+
+# GPU and Performance Optimization Settings
+use_gpu: true                    # Enable GPU acceleration
+gpu_layers: 10                   # Number of GPU layers (reduced for safety)
+max_consecutive_jobs: 2          # Process 5 jobs then check system health
+break_duration: 60               # Seconds to wait when system overheats
+cpu_threshold: 65                # CPU temperature threshold in Celsius
+memory_threshold: 70             # Memory usage threshold in percentage
+
+output_dir: filtered_jobs
+export_csv: true
+export_html: true
+
