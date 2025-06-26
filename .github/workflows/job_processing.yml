@@ -93,11 +93,23 @@ jobs:
         # Create rclone config directory
         mkdir -p ~/.config/rclone
         
-        # Write the RCLONE_CONFIG secret to the config file
-        echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+        # Debug: Check what's in the secret (first few characters only)
+        echo "Secret preview (first 50 chars):"
+        echo "${{ secrets.RCLONE_CONFIG }}" | head -c 50
+        echo "..."
+        
+        # Create the rclone config file
+        cat > ~/.config/rclone/rclone.conf << EOF
+        [gdrive]
+        type = drive
+        scope = drive
+        token = ${{ secrets.RCLONE_CONFIG }}
+        EOF
         
         # Verify the config file was created
         echo "Rclone config file created:"
+        ls -la ~/.config/rclone/
+        echo "Config file contents:"
         cat ~/.config/rclone/rclone.conf
     
     - name: 🔍 Test rclone connectivity
