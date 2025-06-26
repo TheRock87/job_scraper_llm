@@ -93,13 +93,20 @@ jobs:
         # Create rclone config directory
         mkdir -p ~/.config/rclone
         
-        # Create minimal rclone config (will be overridden by secrets)
-        cat > ~/.config/rclone/rclone.conf << EOF
-        [gdrive]
-        type = drive
-        scope = drive
-        token = 
-        EOF
+        # Write the RCLONE_CONFIG secret to the config file
+        echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+        
+        # Verify the config file was created
+        echo "Rclone config file created:"
+        cat ~/.config/rclone/rclone.conf
+    
+    - name: 🔍 Test rclone connectivity
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        echo "Testing rclone connectivity..."
+        rclone about gdrive:
+        echo "Listing root directory:"
+        rclone ls gdrive:/
     
     - name: ☁️ Upload to Google Drive
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
@@ -122,8 +129,6 @@ jobs:
         fi
         
         echo "🎉 All files uploaded to Google Drive AI-Jobs folder!"
-      env:
-        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
     
     - name: 📂 List Google Drive folder contents
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
@@ -137,8 +142,6 @@ jobs:
         echo "=================================================="
         rclone ls gdrive:/
         echo "=================================================="
-      env:
-        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
     
     - name: 📊 Create summary comment
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
