@@ -34,10 +34,6 @@ jobs:
       with:
         fetch-depth: 0  # Full history for job tracking
     
-    - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
-      run: |
-        python job_filter_app/scraper_only.py
-    
     - name: 🐍 Set up Python
       uses: actions/setup-python@v4
       with:
@@ -47,6 +43,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pandas pyyaml requests
+    
+    - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
+      run: |
+        python job_filter_app/scraper_only.py
     
     - name: 🔍 Process and identify new jobs
       id: process-jobs
