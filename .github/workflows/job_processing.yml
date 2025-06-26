@@ -1,50 +1,58 @@
-name: Job Processing
+name: 🤖 AI Job Processing Workflow
+
+permissions:
+  contents: write
 
 on:
+  # Manual trigger
   workflow_dispatch:
     inputs:
       force_process:
-        description: 'Force process all jobs'
+        description: 'Force process all jobs (ignore new jobs only)'
         required: false
         default: false
         type: boolean
+  
+  # Trigger on schedule (daily at 9 AM UTC)
   schedule:
     - cron: '0 9 * * *'
+  
+  # Trigger when jobs_raw.csv is updated
   push:
     paths:
       - 'job_filter_app/jobs_raw.csv'
     branches:
       - main
 
-permissions:
-  contents: write
+env:
+  PYTHON_VERSION: '3.11'
 
 jobs:
   process-jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
+    - name: 📥 Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 0  # Full history for job tracking
     
-    - name: Set up Python
+    - name: 🐍 Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: ${{ env.PYTHON_VERSION }}
     
-    - name: Install dependencies
+    - name: 📦 Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pandas pyyaml requests beautifulsoup4 numpy pydantic markdownify tls-client urllib3 regex
     
-    - name: Scrape jobs
+    - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
       run: |
         cd job_filter_app
         python scraper_only.py
     
-    - name: Process jobs
+    - name: 🔍 Process and identify new jobs
       id: process-jobs
       run: |
         cd job_filter_app
@@ -54,33 +62,38 @@ jobs:
         HISTORY_FILE: job_history.json
         OUTPUT_DIR: processed_jobs
     
-    - name: Show results
+    - name: 📊 Display processing results
       run: |
-        echo "New jobs: ${{ steps.process-jobs.outputs.new_jobs_count }}"
-        echo "Total jobs: ${{ steps.process-jobs.outputs.total_jobs_count }}"
-        echo "Has new jobs: ${{ steps.process-jobs.outputs.has_new_jobs }}"
+        echo "📈 New jobs found: ${{ steps.process-jobs.outputs.new_jobs_count }}"
+        echo "📋 Total jobs: ${{ steps.process-jobs.outputs.total_jobs_count }}"
+        echo "🆕 Has new jobs: ${{ steps.process-jobs.outputs.has_new_jobs }}"
     
-    - name: Skip if no new jobs
+    - name: 🚫 Skip if no new jobs (unless forced)
       if: steps.process-jobs.outputs.has_new_jobs != 'true' && github.event.inputs.force_process != 'true'
       run: |
-        echo "No new jobs found, skipping"
+        echo "⏭️ No new jobs found, skipping LLM processing"
         exit 0
     
-    - name: Upload artifacts
+    - name: 📤 Upload results as artifacts
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
       uses: actions/upload-artifact@v4
       with:
-        name: job-results
+        name: job-processing-results
         path: |
           job_filter_app/processed_jobs/
           job_filter_app/job_history.json
         retention-days: 30
     
-    - name: Setup rclone
+    - name: ☁️ Setup rclone for Google Drive upload
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
       run: |
+        # Install rclone
         curl https://rclone.org/install.sh | sudo bash
+        
+        # Create rclone config directory
         mkdir -p ~/.config/rclone
+        
+        # Create minimal rclone config (will be overridden by secrets)
         cat > ~/.config/rclone/rclone.conf << EOF
         [gdrive]
         type = drive
@@ -88,40 +101,65 @@ jobs:
         token = 
         EOF
     
-    - name: Test rclone
-      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
-      run: |
-        echo "Testing rclone..."
-        rclone about gdrive:
-        rclone ls gdrive:/
-      env:
-        RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
-
-    - name: Upload to Drive
+    - name: ☁️ Upload to Google Drive
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
       run: |
         cd job_filter_app
+        
+        # Upload processed files to Google Drive
+        echo "☁️ Uploading processed results to Google Drive..."
+        
+        # Upload processed CSV
         if [ -f "processed_jobs/all_jobs.csv" ]; then
           rclone copy processed_jobs/all_jobs.csv gdrive:AI-Jobs/ --progress
+          echo "✅ Uploaded all_jobs.csv"
         fi
+        
+        # Upload summary
         if [ -f "processed_jobs/summary.json" ]; then
           rclone copy processed_jobs/summary.json gdrive:AI-Jobs/ --progress
+          echo "✅ Uploaded summary.json"
         fi
+        
+        echo "🎉 All files uploaded to Google Drive AI-Jobs folder!"
       env:
         RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
-
-    - name: List Drive files
+    
+    - name: 📂 List Google Drive folder contents
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
       run: |
+        echo "📁 Listing contents of Google Drive AI-Jobs folder:"
+        echo "=================================================="
         rclone ls gdrive:AI-Jobs/
+        echo "=================================================="
+        echo ""
+        echo "📁 Listing root directory for comparison:"
+        echo "=================================================="
+        rclone ls gdrive:/
+        echo "=================================================="
       env:
         RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
-
-    - name: Commit history
+    
+    - name: 📊 Create summary comment
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        echo "## 🤖 Job Processing Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Total jobs processed:** ${{ steps.process-jobs.outputs.total_jobs_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **New jobs found:** ${{ steps.process-jobs.outputs.new_jobs_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Processing triggered:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📁 **Artifacts available:**" >> $GITHUB_STEP_SUMMARY
+        echo "- `processed_jobs/all_jobs.csv` - All jobs with classifications" >> $GITHUB_STEP_SUMMARY
+        echo "- `processed_jobs/summary.json` - Processing statistics" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "☁️ **Google Drive:** Files uploaded to AI-Jobs folder" >> $GITHUB_STEP_SUMMARY
+    
+    - name: 🔄 Commit updated history
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add job_filter_app/job_history.json
-        git commit -m "Update job history" || echo "No changes"
+        git commit -m "📊 Update job history - ${{ steps.process-jobs.outputs.new_jobs_count }} new jobs" || echo "No changes to commit"
         git push 
