@@ -156,8 +156,8 @@ def main():
     # Process jobs
     new_jobs_file, all_jobs_file = process_new_jobs(csv_file, history_file, output_dir)
     
-    if new_jobs_file is None:
-        print("❌ Processing failed")
+    if all_jobs_file is None:
+        print("❌ Processing failed because input CSV was not found.")
         sys.exit(1)
     
     # Create summary
