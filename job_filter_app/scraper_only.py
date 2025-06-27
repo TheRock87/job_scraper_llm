@@ -186,7 +186,7 @@ def scrape_jobs_with_progress(config):
                 sites_for_this_location = list(set([site_name] + extra_sites))
             if not (matched_country and matched_country.value[0].strip().lower() == "canada"):
                 sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
-            sites_for_this_location = [s for s in sites_for_this_location if s.lower() not in ["google", "bayt"]]
+            sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "google"]
             try:
                 scrape_params = {
                     'site_name': sites_for_this_location,
@@ -245,13 +245,14 @@ def scrape_jobs_with_progress(config):
                 extra_sites.append("glassdoor")
             if matched_country.value[0].strip().lower() == "canada":
                 extra_sites.append("zip_recruiter")
+            extra_sites.append("bayt")
             if isinstance(site_name, list):
                 sites_for_this_location = list(set(site_name + extra_sites))
             else:
                 sites_for_this_location = list(set([site_name] + extra_sites))
             if matched_country.value[0].strip().lower() != "canada":
                 sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
-            sites_for_this_location = [s for s in sites_for_this_location if s.lower() not in ["google", "bayt"]]
+            sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "google"]
             try:
                 scrape_params = {
                     'site_name': sites_for_this_location,

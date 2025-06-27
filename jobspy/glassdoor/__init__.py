@@ -253,23 +253,25 @@ class Glassdoor(Scraper):
             desc = markdown_converter(desc)
         return desc
 
-    def _get_location(self, location: str, is_remote: bool) -> (int, str):
+    def _get_location(self, location: str, is_remote: bool) -> tuple[int, str]:
+        log.info(f"Glassdoor: requesting location '{location}' (is_remote={is_remote})")
         if not location or is_remote:
-            return "11047", "STATE"  # remote options
+            return 11047, "STATE"  # remote options
         url = f"{self.base_url}/findPopularLocationAjax.htm?maxLocationsToReturn=10&term={location}"
         res = self.session.get(url)
+        log.info(f"Glassdoor: location API url: {url}")
+        log.info(f"Glassdoor: location API response status: {res.status_code}")
         if res.status_code != 200:
             if res.status_code == 429:
                 err = f"429 Response - Blocked by Glassdoor for too many requests"
                 log.error(err)
-                return None, None
+                return 0, "ERROR"
             else:
-                err = f"Glassdoor response status code {res.status_code}"
-                err += f" - {res.text}"
+                err = f"Glassdoor response status code {res.status_code} - {res.text}"
                 log.error(f"Glassdoor response status code {res.status_code}")
-                return None, None
+                return 0, "ERROR"
         items = res.json()
-
+        log.info(f"Glassdoor: location API response items: {items}")
         if not items:
             raise ValueError(f"Location '{location}' not found on Glassdoor")
         location_type = items[0]["locationType"]
