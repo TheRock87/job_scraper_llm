@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 import time
 import importlib
+import shutil
 
 import pandas as pd
 import yaml
@@ -314,6 +315,14 @@ def save_to_csv(df, output_path="jobs_raw.csv"):
     try:
         df.to_csv(output_path, index=False)
         logging.info("✅ Successfully saved %d jobs to %s", len(df), output_path)
+        # Copy the CSV to the current working directory as jobs_raw.csv
+        try:
+            shutil.copy(output_path, os.path.join(os.getcwd(), "jobs_raw.csv"))
+            logging.info(f"Copied {output_path} to {os.path.join(os.getcwd(), 'jobs_raw.csv')}")
+            logging.info(f"Current working directory: {os.getcwd()}")
+            logging.info(f"Files in current directory: {os.listdir(os.getcwd())}")
+        except Exception as e:
+            logging.warning(f"Could not copy CSV to current directory: {e}")
         return True
     except Exception as e:
         logging.error("❌ Failed to save CSV: %s", e)
