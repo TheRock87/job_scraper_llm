@@ -135,7 +135,6 @@ def scrape_jobs_with_progress(config):
                 location_clean = location
 
             # --- Determine supported sites for this country ---
-            # List of countries supporting Glassdoor (from enum entries with 3 values)
             glassdoor_supported = [c for c in Country if len(c.value) == 3]
             is_glassdoor_supported = matched_country in glassdoor_supported if matched_country else False
             # Always include Indeed if country_indeed is set
@@ -143,14 +142,18 @@ def scrape_jobs_with_progress(config):
             extra_sites = ["indeed"]
             if is_glassdoor_supported:
                 extra_sites.append("glassdoor")
-            # Optionally add other sites (e.g., google, bayt) as before
+            # Add ZipRecruiter only for Canada
+            if matched_country and matched_country.value[0].strip().lower() == "canada":
+                extra_sites.append("zip_recruiter")
             extra_sites += ["google", "bayt"]
             # Merge with config site_name
             if isinstance(site_name, list):
                 sites_for_this_location = list(set(site_name + extra_sites))
             else:
                 sites_for_this_location = list(set([site_name] + extra_sites))
-
+            # Remove ZipRecruiter for non-Canada
+            if not (matched_country and matched_country.value[0].strip().lower() == "canada"):
+                sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
             try:
                 # Prepare scrape_jobs parameters
                 scrape_params = {
@@ -197,11 +200,17 @@ def scrape_jobs_with_progress(config):
             extra_sites = ["indeed"]
             if is_glassdoor_supported:
                 extra_sites.append("glassdoor")
+            # Add ZipRecruiter only for Canada
+            if matched_country.value[0].strip().lower() == "canada":
+                extra_sites.append("zip_recruiter")
             extra_sites += ["google", "bayt"]
             if isinstance(site_name, list):
                 sites_for_this_location = list(set(site_name + extra_sites))
             else:
                 sites_for_this_location = list(set([site_name] + extra_sites))
+            # Remove ZipRecruiter for non-Canada
+            if matched_country.value[0].strip().lower() != "canada":
+                sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
             try:
                 scrape_params = {
                     'site_name': sites_for_this_location,
