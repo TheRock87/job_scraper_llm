@@ -39,6 +39,21 @@ except Exception as e:
 
 logging.info(f"Current working directory: {os.getcwd()}")
 
+# Preferred mapping for Glassdoor country names
+GLASSDOOR_COUNTRY_MAP = {
+    "uk": "United Kingdom",
+    "united kingdom": "United Kingdom",
+    "usa": "United States",
+    "us": "United States",
+    "united states": "United States",
+    "canada": "Canada",
+    "australia": "Australia",
+    "germany": "Germany",
+    "france": "France",
+    "india": "India",
+    # Add more as needed
+}
+
 def load_config():
     """Load and validate configuration"""
     logging.info("🔍 Loading configuration...")
@@ -134,7 +149,7 @@ def scrape_jobs_with_progress(config):
                 if matched_country:
                     break
             if matched_country:
-                country_indeed = matched_country.value[0].title()
+                country_indeed = matched_country.value[0].split(",")[0].strip().title()
                 # Remove country name from location for Indeed/Glassdoor
                 for name in matched_country.value[0].split(","):
                     location_clean = re.sub(r",?\\s*" + re.escape(name), "", location_clean, flags=re.IGNORECASE)
@@ -154,7 +169,9 @@ def scrape_jobs_with_progress(config):
             # Add ZipRecruiter only for Canada
             if matched_country and matched_country.value[0].strip().lower() == "canada":
                 extra_sites.append("zip_recruiter")
-            extra_sites += ["google", "bayt"]
+            # Remove Google and Bayt from extra_sites
+            # extra_sites += ["google", "bayt"]
+            # Only add ZipRecruiter for Canada
             # Merge with config site_name
             if isinstance(site_name, list):
                 sites_for_this_location = list(set(site_name + extra_sites))
@@ -163,6 +180,8 @@ def scrape_jobs_with_progress(config):
             # Remove ZipRecruiter for non-Canada
             if not (matched_country and matched_country.value[0].strip().lower() == "canada"):
                 sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
+            # Remove Google and Bayt from sites_for_this_location
+            sites_for_this_location = [s for s in sites_for_this_location if s.lower() not in ["google", "bayt"]]
             try:
                 # Prepare scrape_jobs parameters
                 scrape_params = {
@@ -178,10 +197,20 @@ def scrape_jobs_with_progress(config):
                 # Add country_indeed only if it's not None
                 if country_indeed:
                     scrape_params['country_indeed'] = country_indeed
-                # Special: If Google is in sites_for_this_location and google_search_term is set, use it for all countries except Egypt
-                if google_search_term and "google" in [s.lower() for s in sites_for_this_location]:
-                    if not (matched_country and matched_country.value[0].strip().lower() == "egypt"):
-                        scrape_params['google_search_term'] = google_search_term
+                # --- Glassdoor location fix ---
+                if any(s.lower() == "glassdoor" for s in sites_for_this_location):
+                    # For city searches, use only the city part
+                    if location_clean and "," in location_clean:
+                        city_part = location_clean.split(",")[0].strip()
+                        scrape_params['location'] = city_part
+                    elif location_clean:
+                        scrape_params['location'] = location_clean
+                    else:
+                        # For country-wide, use preferred mapping
+                        country_key = matched_country.value[0].split(",")[-1].strip().lower() if matched_country else ""
+                        fallback_location = country_key.title() if country_key else ""
+                        scrape_params['location'] = GLASSDOOR_COUNTRY_MAP.get(country_key, fallback_location)
+                # Remove Google-specific logic
                 jobs = scrape_jobs(**scrape_params)
                 if not jobs.empty:
                     jobs["search_term"] = search_term
@@ -200,7 +229,7 @@ def scrape_jobs_with_progress(config):
             if matched_country in countries_done:
                 continue
             countries_done.add(matched_country)
-            country_indeed = matched_country.value[0].title()
+            country_indeed = matched_country.value[0].split(",")[0].strip().title()
             # Only include country name, no city/state
             location_clean = None  # or ''
             # --- Determine supported sites for this country ---
@@ -212,7 +241,10 @@ def scrape_jobs_with_progress(config):
             # Add ZipRecruiter only for Canada
             if matched_country.value[0].strip().lower() == "canada":
                 extra_sites.append("zip_recruiter")
-            extra_sites += ["google", "bayt"]
+            # Remove Google and Bayt from extra_sites
+            # extra_sites += ["google", "bayt"]
+            # Only add ZipRecruiter for Canada
+            # Merge with config site_name
             if isinstance(site_name, list):
                 sites_for_this_location = list(set(site_name + extra_sites))
             else:
@@ -220,6 +252,8 @@ def scrape_jobs_with_progress(config):
             # Remove ZipRecruiter for non-Canada
             if matched_country.value[0].strip().lower() != "canada":
                 sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
+            # Remove Google and Bayt from sites_for_this_location
+            sites_for_this_location = [s for s in sites_for_this_location if s.lower() not in ["google", "bayt"]]
             try:
                 scrape_params = {
                     'site_name': sites_for_this_location,
@@ -233,8 +267,12 @@ def scrape_jobs_with_progress(config):
                 }
                 if country_indeed:
                     scrape_params['country_indeed'] = country_indeed
-                if google_search_term and "google" in [s.lower() for s in sites_for_this_location]:
-                    scrape_params['google_search_term'] = google_search_term
+                # --- Glassdoor location fix for country-wide ---
+                if any(s.lower() == "glassdoor" for s in sites_for_this_location):
+                    country_key = matched_country.value[0].split(",")[-1].strip().lower() if matched_country else ""
+                    fallback_location = country_key.title() if country_key else ""
+                    scrape_params['location'] = GLASSDOOR_COUNTRY_MAP.get(country_key, fallback_location)
+                # Remove Google-specific logic
                 jobs = scrape_jobs(**scrape_params)
                 if not jobs.empty:
                     jobs["search_term"] = search_term
