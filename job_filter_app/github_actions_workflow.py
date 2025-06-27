@@ -13,9 +13,16 @@ from datetime import datetime
 from pathlib import Path
 import sys
 import logging
+import logging.config
+import yaml
+from pathlib import Path
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
+# Load YAML logging config
+config_path = Path(__file__).parent.parent / "config.yaml"
+with open(config_path) as cf:
+    full_cfg = yaml.safe_load(cf)
+logging.config.dictConfig(full_cfg["logging"])
+logger = logging.getLogger(__name__)
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent

@@ -20,7 +20,16 @@ import yaml
 from jobspy.model import Country
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+
+
 
 # Add the directory containing both job_filter_app and jobspy to sys.path
 project_root = Path(__file__).resolve().parent.parent
@@ -308,25 +317,30 @@ def scrape_jobs_with_progress(config):
     logging.info("  Locations processed: %d", len(locations))
     return df
 
-def save_to_csv(df, output_path="jobs_raw.csv"):
+def save_to_csv(df, output_path):
     """Save jobs to CSV file"""
     logging.info("\n💾 Saving jobs to %s...", output_path)
     
     try:
+        # Guarantee parent directory
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(output_path, index=False)
         logging.info("✅ Successfully saved %d jobs to %s", len(df), output_path)
-        # Copy the CSV to the current working directory as jobs_raw.csv
+        # Copy the CSV to the job_filter_app directory as jobs_raw.csv
         try:
-            shutil.copy(output_path, os.path.join(os.getcwd(), "jobs_raw.csv"))
-            logging.info(f"Copied {output_path} to {os.path.join(os.getcwd(), 'jobs_raw.csv')}")
+            job_filter_app_dir = os.path.dirname(__file__)
+            copy_destination = os.path.join(job_filter_app_dir, "jobs_raw.csv")
+            shutil.copy(output_path, copy_destination)
+            logging.info(f"Copied {output_path} to {copy_destination}")
+            logging.info(f"Script directory: {job_filter_app_dir}")
             logging.info(f"Current working directory: {os.getcwd()}")
-            logging.info(f"Files in current directory: {os.listdir(os.getcwd())}")
+            logging.info(f"Files in job_filter_app directory: {os.listdir(job_filter_app_dir)}")
         except Exception as e:
-            logging.warning(f"Could not copy CSV to current directory: {e}")
+            logging.warning(f"Could not copy CSV to job_filter_app directory: {e}")
         return True
-    except Exception as e:
-        logging.error("❌ Failed to save CSV: %s", e)
-        return False
+    except Exception:
++        logger.exception(f"Could not write CSV to {output_path}")
++        sys.exit(1)
 
 def upload_to_gdrive(local_file, remote_folder="gdrive:AI-Jobs"):
     """Upload file to Google Drive using rclone"""
@@ -380,8 +394,12 @@ def main():
     
     # Step 3: Save to CSV
     # Always resolve output_file to the correct data directory inside job_filter_app
-    output_file = os.path.join(os.path.dirname(__file__), "data/jobs_raw.csv")
-    output_dir = os.path.dirname(output_file)
+
+    data_dir = Path(__file__).parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    output_file = data_dir / "jobs_raw.csv"
+    save_to_csv(jobs_df, output_file)
     if not os.path.exists(output_dir):
         logging.warning(f"⚠️ Directory does not exist: {output_dir}. Attempting to save anyway.")
     save_to_csv(jobs_df, output_file)
