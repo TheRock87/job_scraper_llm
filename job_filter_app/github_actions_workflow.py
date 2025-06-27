@@ -18,7 +18,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
 # Paths
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
 CSV_FILE = os.environ.get('CSV_FILE', str(BASE_DIR / 'jobs_raw.csv'))
