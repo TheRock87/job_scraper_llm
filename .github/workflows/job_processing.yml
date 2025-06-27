@@ -48,9 +48,7 @@ jobs:
         pip install pandas pyyaml requests beautifulsoup4 numpy pydantic markdownify tls-client urllib3 regex
     
     - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
-      run: |
-        cd job_filter_app
-        python scraper_only.py
+      run: python job_filter_app/scraper_only.py
     
     - name: 🔍 Process and identify new jobs
       id: process-jobs

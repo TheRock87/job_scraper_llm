@@ -26,10 +26,12 @@ jobspy_path = current_dir.parent
 logging.info("[🧪] Adding to sys.path: %s", jobspy_path)
 sys.path.insert(0, str(jobspy_path))
 
-# Always add the project root (the directory containing both job_filter_app and jobspy) to sys.path
+# Add both the project root and its parent to sys.path
 project_root = Path(__file__).resolve().parents[1]
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+parent_of_project_root = project_root.parent
+for p in [str(project_root), str(parent_of_project_root)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 try:
     from jobspy import scrape_jobs
