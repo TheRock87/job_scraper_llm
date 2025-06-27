@@ -47,6 +47,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install pandas pyyaml requests beautifulsoup4 numpy pydantic markdownify tls-client urllib3 regex
     
+    - name: Install your package
+      run: pip install -e .
+    
     - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
       run: python job_filter_app/scraper_only.py
     

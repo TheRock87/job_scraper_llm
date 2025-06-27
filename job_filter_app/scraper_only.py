@@ -21,17 +21,14 @@ from jobspy.model import Country
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-current_dir = Path(__file__).resolve().parent
-jobspy_path = current_dir.parent
-logging.info("[🧪] Adding to sys.path: %s", jobspy_path)
-sys.path.insert(0, str(jobspy_path))
-
-# Add both the project root and its parent to sys.path
-project_root = Path(__file__).resolve().parents[1]
-parent_of_project_root = project_root.parent
-for p in [str(project_root), str(parent_of_project_root)]:
-    if p not in sys.path:
-        sys.path.insert(0, p)
+# Add the directory containing both job_filter_app and jobspy to sys.path
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+# Also add the current working directory (for GitHub Actions)
+cwd = Path.cwd()
+if str(cwd) not in sys.path:
+    sys.path.insert(0, str(cwd))
 
 try:
     from jobspy import scrape_jobs
