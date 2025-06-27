@@ -370,12 +370,12 @@ def main():
         sys.exit(0)
     
     # Step 3: Save to CSV
-    output_file = config.get("output_file", "data/jobs_raw.csv")
-    # Ensure data directory exists
-    data_dir = os.path.join(os.path.dirname(__file__), "data")
-    os.makedirs(data_dir, exist_ok=True)
-    if not save_to_csv(jobs_df, output_file):
-        sys.exit(1)
+    # Always resolve output_file to the correct data directory inside job_filter_app
+    output_file = os.path.join(os.path.dirname(__file__), "data/jobs_raw.csv")
+    output_dir = os.path.dirname(output_file)
+    if not os.path.exists(output_dir):
+        logging.warning(f"⚠️ Directory does not exist: {output_dir}. Attempting to save anyway.")
+    save_to_csv(jobs_df, output_file)
     
     # Step 4: Upload to Google Drive (optional)
     if config.get("upload_to_gdrive", False):
