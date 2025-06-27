@@ -169,8 +169,11 @@ class Country(Enum):
         country_str = country_str.strip().lower()
         for country in cls:
             country_names = country.value[0].split(",")
-            if country_str in country_names:
-                return country
+            # Check if any part of the input string matches any country name
+            for name in country_names:
+                name = name.strip()
+                if name and (name == country_str or name in country_str or country_str in name):
+                    return country
         valid_countries = [country.value for country in cls]
         raise ValueError(
             f"Invalid country string: '{country_str}'. Valid countries are: {', '.join([country[0] for country in valid_countries])}"
