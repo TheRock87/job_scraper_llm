@@ -219,6 +219,10 @@ def scrape_jobs_with_progress(config):
                     logging.info("    ✅ Finished: %d jobs found for '%s' in '%s'", len(jobs), search_term, location)
                 else:
                     logging.warning("    ⚠️ No jobs found for '%s' in '%s'", search_term, location)
+                # Add global delay if ZipRecruiter is in the sites
+                if any(s.lower() == "zip_recruiter" for s in sites_for_this_location):
+                    logging.info("⏳ Waiting 10 seconds after ZipRecruiter request to avoid rate limits...")
+                    time.sleep(10)
             except Exception as e:
                 logging.error("    ❌ Failed: %s for '%s' in '%s'", e, search_term, location)
                 continue
@@ -284,6 +288,10 @@ def scrape_jobs_with_progress(config):
             except Exception as e:
                 logging.error("    ❌ Failed: %s for '%s' in '%s' (country-wide)", e, search_term, country_indeed)
                 continue
+            # Add global delay if ZipRecruiter is in the sites
+            if any(s.lower() == "zip_recruiter" for s in sites_for_this_location):
+                logging.info("⏳ Waiting 10 seconds after ZipRecruiter request to avoid rate limits...")
+                time.sleep(10)
         # After all locations for this search_term, wait 60 seconds
         logging.info("⏳ Waiting 60 seconds before next search term to avoid rate limits...")
         time.sleep(60)
