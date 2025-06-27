@@ -41,6 +41,10 @@ class RotatingProxySession:
             )
         else:
             self.proxy_cycle = None
+        
+        # Track failed proxies for fallback
+        self.failed_proxies = set()
+        self.proxy_fallback_enabled = False
 
     @staticmethod
     def format_proxy(proxy):
@@ -50,6 +54,28 @@ class RotatingProxySession:
         if proxy.startswith("socks5://"):
             return {"http": proxy, "https": proxy}
         return {"http": f"http://{proxy}", "https": f"http://{proxy}"}
+    
+    def mark_proxy_failed(self, proxy_dict):
+        """Mark a proxy as failed and enable fallback if all proxies fail"""
+        if proxy_dict:
+            proxy_str = proxy_dict.get("http", "") or proxy_dict.get("https", "")
+            self.failed_proxies.add(proxy_str)
+            
+            # If all proxies have failed, enable fallback
+            if self.proxy_cycle and len(self.failed_proxies) >= len(list(self.proxy_cycle)):
+                self.proxy_fallback_enabled = True
+                create_logger("ProxyManager").warning("All proxies have failed, continuing without proxies")
+    
+    def get_next_proxy(self):
+        """Get the next proxy, with fallback to no proxy if all have failed"""
+        if not self.proxy_cycle or self.proxy_fallback_enabled:
+            return {}
+        
+        next_proxy = next(self.proxy_cycle)
+        # Return empty dict for localhost (no proxy)
+        if next_proxy["http"] == "http://localhost":
+            return {}
+        return next_proxy
 
 
 class RequestsRotating(RotatingProxySession, requests.Session):
@@ -77,13 +103,21 @@ class RequestsRotating(RotatingProxySession, requests.Session):
         if self.clear_cookies:
             self.cookies.clear()
 
-        if self.proxy_cycle:
-            next_proxy = next(self.proxy_cycle)
-            if next_proxy["http"] != "http://localhost":
-                self.proxies = next_proxy
-            else:
-                self.proxies = {}
-        return requests.Session.request(self, method, url, **kwargs)
+        # Get next proxy with fallback handling
+        next_proxy = self.get_next_proxy()
+        self.proxies = next_proxy
+        
+        try:
+            return requests.Session.request(self, method, url, **kwargs)
+        except Exception as e:
+            # Mark proxy as failed if request fails
+            if "Proxy responded with" in str(e) or "Connection" in str(e):
+                self.mark_proxy_failed(next_proxy)
+                # Retry without proxy if all proxies have failed
+                if self.proxy_fallback_enabled:
+                    self.proxies = {}
+                    return requests.Session.request(self, method, url, **kwargs)
+            raise
 
 
 class TLSRotating(RotatingProxySession, tls_client.Session):
@@ -92,15 +126,25 @@ class TLSRotating(RotatingProxySession, tls_client.Session):
         tls_client.Session.__init__(self, random_tls_extension_order=True)
 
     def execute_request(self, *args, **kwargs):
-        if self.proxy_cycle:
-            next_proxy = next(self.proxy_cycle)
-            if next_proxy["http"] != "http://localhost":
-                self.proxies = next_proxy
-            else:
-                self.proxies = {}
-        response = tls_client.Session.execute_request(self, *args, **kwargs)
-        response.ok = response.status_code in range(200, 400)
-        return response
+        # Get next proxy with fallback handling
+        next_proxy = self.get_next_proxy()
+        self.proxies = next_proxy
+        
+        try:
+            response = tls_client.Session.execute_request(self, *args, **kwargs)
+            response.ok = response.status_code in range(200, 400)
+            return response
+        except Exception as e:
+            # Mark proxy as failed if request fails
+            if "Proxy responded with" in str(e) or "Connection" in str(e):
+                self.mark_proxy_failed(next_proxy)
+                # Retry without proxy if all proxies have failed
+                if self.proxy_fallback_enabled:
+                    self.proxies = {}
+                    response = tls_client.Session.execute_request(self, *args, **kwargs)
+                    response.ok = response.status_code in range(200, 400)
+                    return response
+            raise
 
 
 def create_session(

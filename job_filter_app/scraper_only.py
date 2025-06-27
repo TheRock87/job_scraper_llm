@@ -82,7 +82,6 @@ def scrape_jobs_with_progress(config):
     hours_old = config["hours_old"]
     linkedin_fetch_description = config.get("linkedin_fetch_description", False)
     description_format = config.get("description_format", "markdown")
-    google_search_term = config.get("google_search_term", None)
     
     logging.info("📋 Configuration:")
     logging.info("  Search terms: %s", search_terms)
@@ -91,10 +90,16 @@ def scrape_jobs_with_progress(config):
     logging.info("  Results per search: %s", results_wanted)
     logging.info("  Hours old: %s", hours_old)
     
+    # Log proxy configuration
+    proxies = config.get("proxies", [])
+    if proxies:
+        logging.info("  Proxies configured: %d", len(proxies))
+        logging.info("  Proxy fallback: Enabled (will continue without proxies if all fail)")
+    else:
+        logging.info("  Proxies: None configured")
+    
     # Store all jobs here
     all_jobs = []
-    total_searches = len(search_terms) * len(locations)
-    current_search = 0
     
     # Group locations by country for country-wide search
     from collections import defaultdict
@@ -113,7 +118,13 @@ def scrape_jobs_with_progress(config):
         if matched_country:
             country_to_locations[matched_country].append(location)
             mentioned_countries.add(matched_country)
-
+    
+    # Calculate total searches including country-wide searches
+    # Each search term gets: len(locations) + len(mentioned_countries excluding Egypt)
+    country_wide_searches = len([c for c in mentioned_countries if c.value[0].strip().lower() != "egypt"])
+    total_searches = len(search_terms) * (len(locations) + country_wide_searches)
+    current_search = 0
+    
     for search_term in search_terms:
         countries_done = set()
         for location in locations:
@@ -134,7 +145,7 @@ def scrape_jobs_with_progress(config):
                 if matched_country:
                     break
             if matched_country:
-                country_indeed = matched_country.value[0].title()
+                country_indeed = matched_country.value[0]  # Use original string, not title-cased
                 # Remove country name from location for Indeed/Glassdoor
                 for name in matched_country.value[0].split(","):
                     location_clean = re.sub(r",?\\s*" + re.escape(name), "", location_clean, flags=re.IGNORECASE)
@@ -151,17 +162,16 @@ def scrape_jobs_with_progress(config):
             extra_sites = ["indeed"]
             if is_glassdoor_supported:
                 extra_sites.append("glassdoor")
-            # Add ZipRecruiter only for Canada
-            if matched_country and matched_country.value[0].strip().lower() == "canada":
+            # Add ZipRecruiter only for Ireland
+            if matched_country and matched_country.value[0].strip().lower() == "ireland":
                 extra_sites.append("zip_recruiter")
-            extra_sites += ["google", "bayt"]
             # Merge with config site_name
             if isinstance(site_name, list):
                 sites_for_this_location = list(set(site_name + extra_sites))
             else:
                 sites_for_this_location = list(set([site_name] + extra_sites))
-            # Remove ZipRecruiter for non-Canada
-            if not (matched_country and matched_country.value[0].strip().lower() == "canada"):
+            # Remove ZipRecruiter for non-Ireland
+            if not (matched_country and matched_country.value[0].strip().lower() == "ireland"):
                 sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
             try:
                 # Prepare scrape_jobs parameters
@@ -178,10 +188,9 @@ def scrape_jobs_with_progress(config):
                 # Add country_indeed only if it's not None
                 if country_indeed:
                     scrape_params['country_indeed'] = country_indeed
-                # Special: If Google is in sites_for_this_location and google_search_term is set, use it for all countries except Egypt
-                if google_search_term and "google" in [s.lower() for s in sites_for_this_location]:
-                    if not (matched_country and matched_country.value[0].strip().lower() == "egypt"):
-                        scrape_params['google_search_term'] = google_search_term
+                # Add proxies from config
+                if proxies:
+                    scrape_params['proxies'] = proxies
                 jobs = scrape_jobs(**scrape_params)
                 if not jobs.empty:
                     jobs["search_term"] = search_term
@@ -200,7 +209,10 @@ def scrape_jobs_with_progress(config):
             if matched_country in countries_done:
                 continue
             countries_done.add(matched_country)
-            country_indeed = matched_country.value[0].title()
+            current_search += 1
+            country_indeed = matched_country.value[0]
+            logging.info("\n[%d/%d] 🔍 Scraping '%s' in %s (country-wide)", current_search, total_searches, search_term, country_indeed)
+            logging.info("    → Starting country-wide search for '%s' in '%s'...", search_term, country_indeed)
             # Only include country name, no city/state
             location_clean = None  # or ''
             # --- Determine supported sites for this country ---
@@ -209,16 +221,16 @@ def scrape_jobs_with_progress(config):
             extra_sites = ["indeed"]
             if is_glassdoor_supported:
                 extra_sites.append("glassdoor")
-            # Add ZipRecruiter only for Canada
-            if matched_country.value[0].strip().lower() == "canada":
+            # Add ZipRecruiter only for Ireland
+            if matched_country.value[0].strip().lower() == "ireland":
                 extra_sites.append("zip_recruiter")
-            extra_sites += ["google", "bayt"]
+            # Merge with config site_name
             if isinstance(site_name, list):
                 sites_for_this_location = list(set(site_name + extra_sites))
             else:
                 sites_for_this_location = list(set([site_name] + extra_sites))
-            # Remove ZipRecruiter for non-Canada
-            if matched_country.value[0].strip().lower() != "canada":
+            # Remove ZipRecruiter for non-Ireland
+            if matched_country.value[0].strip().lower() != "ireland":
                 sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
             try:
                 scrape_params = {
@@ -233,8 +245,9 @@ def scrape_jobs_with_progress(config):
                 }
                 if country_indeed:
                     scrape_params['country_indeed'] = country_indeed
-                if google_search_term and "google" in [s.lower() for s in sites_for_this_location]:
-                    scrape_params['google_search_term'] = google_search_term
+                # Add proxies from config
+                if proxies:
+                    scrape_params['proxies'] = proxies
                 jobs = scrape_jobs(**scrape_params)
                 if not jobs.empty:
                     jobs["search_term"] = search_term
@@ -270,6 +283,8 @@ def scrape_jobs_with_progress(config):
     logging.info("  Unique jobs after deduplication: %d", len(df))
     logging.info("  Search terms processed: %d", len(search_terms))
     logging.info("  Locations processed: %d", len(locations))
+    logging.info("  Country-wide searches: %d", country_wide_searches)
+    logging.info("  Total searches performed: %d", total_searches)
     
     return df
 

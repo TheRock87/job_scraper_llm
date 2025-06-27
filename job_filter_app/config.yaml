@@ -7,7 +7,8 @@ description_format: markdown
 site_name:
   - linkedin
   - indeed
-  # - bayt
+  # - bayt  # Disabled - no longer used
+  # - google  # Disabled - no longer used
 
 locations:
   # Egypt
@@ -76,6 +77,20 @@ locations:
   - Calgary, Canada
   - Edmonton, Canada
   - Waterloo, Canada
+  # Australia
+  - Sydney, Australia
+  - Melbourne, Australia
+  - Brisbane, Australia
+  - Perth, Australia
+  - Adelaide, Australia
+  - Canberra, Australia
+  - Gold Coast, Australia
+  # New Zealand
+  - Auckland, New Zealand
+  - Wellington, New Zealand
+  - Christchurch, New Zealand
+  - Hamilton, New Zealand
+  - Tauranga, New Zealand
 
 use_llm_filter: true
 llm_prompt_template: |
@@ -105,14 +120,15 @@ export_csv: true
 export_html: true
 
 proxies:
-  - qqxegrku:u6msqzeehxwh@198.23.239.134:6540
-  - qqxegrku:u6msqzeehxwh@207.244.217.165:6712
-  - qqxegrku:u6msqzeehxwh@107.172.163.27:6543
-  - qqxegrku:u6msqzeehxwh@23.94.138.75:6349
-  - qqxegrku:u6msqzeehxwh@216.10.27.159:6837
-  - qqxegrku:u6msqzeehxwh@136.0.207.84:6661
-  - qqxegrku:u6msqzeehxwh@64.64.118.149:6732
-  - qqxegrku:u6msqzeehxwh@142.147.128.93:6593
-  - qqxegrku:u6msqzeehxwh@104.239.105.125:6655
-  - qqxegrku:u6msqzeehxwh@173.0.9.70:5653
+  - 198.23.239.134:6540
+  - 207.244.217.165:6712
+  - 107.172.163.27:6543
+  - 23.94.138.75:6349
+  - 216.10.27.159:6837
+  - 136.0.207.84:6661
+  - 64.64.118.149:6732
+  - 142.147.128.93:6593
+  - 104.239.105.125:6655
+  - 173.0.9.70:5653
+  - localhost
 
