@@ -13,7 +13,7 @@ on:
         default: false
         type: boolean
   
-  # Trigger on schedule (daily at 6 AM UTC)
+  # Trigger on schedule (daily at 9 AM UTC)
   schedule:
     - cron: '0 6 * * *'
   
@@ -60,7 +60,7 @@ jobs:
       env:
         CSV_FILE: jobs_raw.csv
         HISTORY_FILE: job_history.json
-        OUTPUT_DIR: data
+        OUTPUT_DIR: processed_jobs
     
     - name: 📊 Display processing results
       run: |
@@ -80,10 +80,74 @@ jobs:
       with:
         name: job-processing-results
         path: |
-          job_filter_app/data/
+          job_filter_app/processed_jobs/
           job_filter_app/job_history.json
         retention-days: 30
-
+    
+    - name: ☁️ Setup rclone for Google Drive upload
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        # Install rclone
+        curl https://rclone.org/install.sh | sudo bash
+        
+        # Create rclone config directory
+        mkdir -p ~/.config/rclone
+        
+        # Debug: Check what's in the secret (first few characters only)
+        echo "Secret preview (first 50 chars):"
+        echo "${{ secrets.RCLONE_CONFIG }}" | head -c 50
+        echo "..."
+        
+        # Create the rclone config file
+        cat > ~/.config/rclone/rclone.conf << EOF
+        [gdrive]
+        type = drive
+        scope = drive
+        token = ${{ secrets.RCLONE_CONFIG }}
+        EOF
+        
+        # Verify the config file was created
+        echo "Rclone config file created:"
+        ls -la ~/.config/rclone/
+        echo "Config file contents:"
+        cat ~/.config/rclone/rclone.conf
+    
+    - name: 🔍 Test rclone connectivity
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        echo "Testing rclone connectivity..."
+        rclone about gdrive:
+    
+    - name: ☁️ Upload to Google Drive
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        cd job_filter_app
+        
+        # Upload processed files to Google Drive
+        echo "☁️ Uploading processed results to Google Drive..."
+        
+        # Upload processed CSV
+        if [ -f "processed_jobs/all_jobs.csv" ]; then
+          rclone copy processed_jobs/all_jobs.csv gdrive:AI-Jobs/ --progress
+          echo "✅ Uploaded all_jobs.csv"
+        fi
+        
+        # Upload summary
+        if [ -f "processed_jobs/summary.json" ]; then
+          rclone copy processed_jobs/summary.json gdrive:AI-Jobs/ --progress
+          echo "✅ Uploaded summary.json"
+        fi
+        
+        echo "🎉 All files uploaded to Google Drive AI-Jobs folder!"
+    
+    - name: 📂 List Google Drive folder contents
+      if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
+      run: |
+        echo "📁 Listing contents of Google Drive AI-Jobs folder:"
+        echo "=================================================="
+        rclone ls gdrive:AI-Jobs/
+        echo "=================================================="
+    
     - name: 📊 Create summary comment
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
       run: |
@@ -94,8 +158,8 @@ jobs:
         echo "- **Processing triggered:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "📁 **Artifacts available:**" >> $GITHUB_STEP_SUMMARY
-        echo "- `data/all_jobs.csv` - All jobs with classifications" >> $GITHUB_STEP_SUMMARY
-        echo "- `data/summary.json` - Processing statistics" >> $GITHUB_STEP_SUMMARY
+        echo "- `processed_jobs/all_jobs.csv` - All jobs with classifications" >> $GITHUB_STEP_SUMMARY
+        echo "- `processed_jobs/summary.json` - Processing statistics" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "☁️ **Google Drive:** Files uploaded to AI-Jobs folder" >> $GITHUB_STEP_SUMMARY
     

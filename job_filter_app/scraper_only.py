@@ -134,10 +134,22 @@ def scrape_jobs_with_progress(config):
                 country_indeed = None
                 location_clean = location
 
+            # Determine site_name for this location
+            if country_indeed and country_indeed.upper() != "EGYPT":
+                # Use union of config site_name and ["glassdoor", "google", "bayt"]
+                extra_sites = ["glassdoor", "google", "bayt"]
+                # Ensure site_name is a list
+                if isinstance(site_name, list):
+                    sites_for_this_location = list(set(site_name + extra_sites))
+                else:
+                    sites_for_this_location = list(set([site_name] + extra_sites))
+            else:
+                sites_for_this_location = site_name
+
             try:
                 # Prepare scrape_jobs parameters
                 scrape_params = {
-                    'site_name': site_name,
+                    'site_name': sites_for_this_location,
                     'search_term': f'"{search_term}"',
                     'location': location_clean,
                     'results_wanted': results_wanted,
