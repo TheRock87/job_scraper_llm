@@ -11,6 +11,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+import time
 
 import pandas as pd
 import yaml
@@ -61,7 +62,7 @@ def scrape_jobs_with_progress(config):
     # Parse search terms
     search_terms = [
         term.strip().strip('"') 
-        for term in re.split(r"\\s+OR\\s+", config["search_term"]) 
+        for term in re.split(r"\s+OR\s+", config["search_term"]) 
         if not term.startswith("-")  # Exclude negative terms
     ]
     
@@ -159,13 +160,22 @@ def scrape_jobs_with_progress(config):
             except Exception as e:
                 logging.error("    ❌ Failed: %s for '%s' in '%s'", e, search_term, location)
                 continue
+        # After all locations for this search_term, wait 60 seconds
+        logging.info("⏳ Waiting 60 seconds before next search term to avoid rate limits...")
+        time.sleep(60)
     
     # Combine results
     if not all_jobs:
         logging.warning("\n🚫 No job listings were found.")
         return None
 
-    df = pd.concat(all_jobs, ignore_index=True).drop_duplicates(
+    # Filter out empty DataFrames before concatenation
+    non_empty_jobs = [df for df in all_jobs if not df.empty]
+    if not non_empty_jobs:
+        logging.warning("\n🚫 All job DataFrames are empty after filtering. No jobs to process.")
+        return None
+
+    df = pd.concat(non_empty_jobs, ignore_index=True).drop_duplicates(
         subset=["title", "company", "location"]
     )
     
