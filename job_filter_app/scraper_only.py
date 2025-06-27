@@ -37,11 +37,15 @@ except Exception as e:
     logging.error("[❌] jobspy import failed: %s", e)
     raise
 
+logging.info(f"Current working directory: {os.getcwd()}")
+
 def load_config():
     """Load and validate configuration"""
     logging.info("🔍 Loading configuration...")
     try:
-        with open("config.yaml", "r") as f:
+        config_path = Path(__file__).resolve().parent / "config.yaml"
+        logging.info(f"Looking for config at: {config_path} (exists: {config_path.exists()})")
+        with open(config_path, "r") as f:
             config = yaml.safe_load(f)
         
         # Validate required fields

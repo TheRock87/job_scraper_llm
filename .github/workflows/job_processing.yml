@@ -53,6 +53,9 @@ jobs:
     - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
       run: python job_filter_app/scraper_only.py
     
+    - name: List files for debug
+      run: ls -l job_filter_app/
+    
     - name: 🔍 Process and identify new jobs
       id: process-jobs
       run: |
