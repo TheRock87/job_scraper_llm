@@ -58,13 +58,12 @@ jobs:
     
     - name: 🔍 Process and identify new jobs
       id: process-jobs
-      run: |
-        cd job_filter_app
-        python github_actions_workflow.py
+      working-directory: job_filter_app
+      run: python github_actions_workflow.py
       env:
-        CSV_FILE: jobs_raw.csv
-        HISTORY_FILE: job_history.json
-        OUTPUT_DIR: data
+        CSV_FILE: data/jobs_raw.csv
+        HISTORY_FILE: data/job_history.json
+
     
     - name: 📊 Display processing results
       run: |
