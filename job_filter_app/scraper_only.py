@@ -98,6 +98,7 @@ def scrape_jobs_with_progress(config):
     linkedin_fetch_description = config.get("linkedin_fetch_description", False)
     description_format = config.get("description_format", "markdown")
     google_search_term = config.get("google_search_term", None)
+    proxies = config.get("proxies", None)
     
     logging.info("📋 Configuration:")
     logging.info("  Search terms: %s", search_terms)
@@ -105,6 +106,10 @@ def scrape_jobs_with_progress(config):
     logging.info("  Sites: %s", site_name)
     logging.info("  Results per search: %s", results_wanted)
     logging.info("  Hours old: %s", hours_old)
+    if proxies:
+        logging.info("  Proxies: %d proxies loaded", len(proxies))
+    else:
+        logging.info("  Proxies: None")
     
     # Store all jobs here
     all_jobs = []
@@ -128,6 +133,15 @@ def scrape_jobs_with_progress(config):
         if matched_country:
             country_to_locations[matched_country].append(location)
             mentioned_countries.add(matched_country)
+
+    def try_scrape(scrape_params, proxies=None):
+        try:
+            if proxies:
+                scrape_params['proxies'] = proxies
+            return scrape_jobs(**scrape_params)
+        except Exception as e:
+            logging.warning(f"Proxy scraping failed: {e}")
+            return None
 
     for search_term in search_terms:
         countries_done = set()
@@ -161,29 +175,19 @@ def scrape_jobs_with_progress(config):
             # --- Determine supported sites for this country ---
             glassdoor_supported = [c for c in Country if len(c.value) == 3]
             is_glassdoor_supported = matched_country in glassdoor_supported if matched_country else False
-            # Always include Indeed if country_indeed is set
-            # Add Glassdoor only if supported
             extra_sites = ["indeed"]
             if is_glassdoor_supported:
                 extra_sites.append("glassdoor")
-            # Add ZipRecruiter only for Canada
             if matched_country and matched_country.value[0].strip().lower() == "canada":
                 extra_sites.append("zip_recruiter")
-            # Remove Google and Bayt from extra_sites
-            # extra_sites += ["google", "bayt"]
-            # Only add ZipRecruiter for Canada
-            # Merge with config site_name
             if isinstance(site_name, list):
                 sites_for_this_location = list(set(site_name + extra_sites))
             else:
                 sites_for_this_location = list(set([site_name] + extra_sites))
-            # Remove ZipRecruiter for non-Canada
             if not (matched_country and matched_country.value[0].strip().lower() == "canada"):
                 sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
-            # Remove Google and Bayt from sites_for_this_location
             sites_for_this_location = [s for s in sites_for_this_location if s.lower() not in ["google", "bayt"]]
             try:
-                # Prepare scrape_jobs parameters
                 scrape_params = {
                     'site_name': sites_for_this_location,
                     'search_term': f'"{search_term}"',
@@ -194,32 +198,31 @@ def scrape_jobs_with_progress(config):
                     'description_format': description_format,
                     'verbose': 1,
                 }
-                # Add country_indeed only if it's not None
                 if country_indeed:
                     scrape_params['country_indeed'] = country_indeed
                 # --- Glassdoor location fix ---
                 if any(s.lower() == "glassdoor" for s in sites_for_this_location):
-                    # For city searches, use only the city part
                     if location_clean and "," in location_clean:
                         city_part = location_clean.split(",")[0].strip()
                         scrape_params['location'] = city_part
                     elif location_clean:
                         scrape_params['location'] = location_clean
                     else:
-                        # For country-wide, use preferred mapping
                         country_key = matched_country.value[0].split(",")[-1].strip().lower() if matched_country else ""
                         fallback_location = country_key.title() if country_key else ""
                         scrape_params['location'] = GLASSDOOR_COUNTRY_MAP.get(country_key, fallback_location)
-                # Remove Google-specific logic
-                jobs = scrape_jobs(**scrape_params)
-                if not jobs.empty:
+                # Try with proxies first
+                jobs = try_scrape(scrape_params, proxies=proxies)
+                if jobs is None or jobs.empty:
+                    logging.warning("All proxies failed or returned no jobs. Retrying without proxies...")
+                    jobs = try_scrape(scrape_params, proxies=None)
+                if jobs is not None and not jobs.empty:
                     jobs["search_term"] = search_term
                     jobs["search_location"] = location
                     all_jobs.append(jobs)
                     logging.info("    ✅ Finished: %d jobs found for '%s' in '%s'", len(jobs), search_term, location)
                 else:
                     logging.warning("    ⚠️ No jobs found for '%s' in '%s'", search_term, location)
-                # Add global delay if ZipRecruiter is in the sites
                 if any(s.lower() == "zip_recruiter" for s in sites_for_this_location):
                     logging.info("⏳ Waiting 10 seconds after ZipRecruiter request to avoid rate limits...")
                     time.sleep(10)
@@ -234,29 +237,20 @@ def scrape_jobs_with_progress(config):
                 continue
             countries_done.add(matched_country)
             country_indeed = matched_country.value[0].split(",")[0].strip().title()
-            # Only include country name, no city/state
             location_clean = None  # or ''
-            # --- Determine supported sites for this country ---
             glassdoor_supported = [c for c in Country if len(c.value) == 3]
             is_glassdoor_supported = matched_country in glassdoor_supported
             extra_sites = ["indeed"]
             if is_glassdoor_supported:
                 extra_sites.append("glassdoor")
-            # Add ZipRecruiter only for Canada
             if matched_country.value[0].strip().lower() == "canada":
                 extra_sites.append("zip_recruiter")
-            # Remove Google and Bayt from extra_sites
-            # extra_sites += ["google", "bayt"]
-            # Only add ZipRecruiter for Canada
-            # Merge with config site_name
             if isinstance(site_name, list):
                 sites_for_this_location = list(set(site_name + extra_sites))
             else:
                 sites_for_this_location = list(set([site_name] + extra_sites))
-            # Remove ZipRecruiter for non-Canada
             if matched_country.value[0].strip().lower() != "canada":
                 sites_for_this_location = [s for s in sites_for_this_location if s.lower() != "zip_recruiter"]
-            # Remove Google and Bayt from sites_for_this_location
             sites_for_this_location = [s for s in sites_for_this_location if s.lower() not in ["google", "bayt"]]
             try:
                 scrape_params = {
@@ -271,14 +265,15 @@ def scrape_jobs_with_progress(config):
                 }
                 if country_indeed:
                     scrape_params['country_indeed'] = country_indeed
-                # --- Glassdoor location fix for country-wide ---
                 if any(s.lower() == "glassdoor" for s in sites_for_this_location):
                     country_key = matched_country.value[0].split(",")[-1].strip().lower() if matched_country else ""
                     fallback_location = country_key.title() if country_key else ""
                     scrape_params['location'] = GLASSDOOR_COUNTRY_MAP.get(country_key, fallback_location)
-                # Remove Google-specific logic
-                jobs = scrape_jobs(**scrape_params)
-                if not jobs.empty:
+                jobs = try_scrape(scrape_params, proxies=proxies)
+                if jobs is None or jobs.empty:
+                    logging.warning("All proxies failed or returned no jobs. Retrying without proxies...")
+                    jobs = try_scrape(scrape_params, proxies=None)
+                if jobs is not None and not jobs.empty:
                     jobs["search_term"] = search_term
                     jobs["search_location"] = country_indeed + " (country-wide)"
                     all_jobs.append(jobs)
@@ -288,35 +283,27 @@ def scrape_jobs_with_progress(config):
             except Exception as e:
                 logging.error("    ❌ Failed: %s for '%s' in '%s' (country-wide)", e, search_term, country_indeed)
                 continue
-            # Add global delay if ZipRecruiter is in the sites
             if any(s.lower() == "zip_recruiter" for s in sites_for_this_location):
                 logging.info("⏳ Waiting 10 seconds after ZipRecruiter request to avoid rate limits...")
                 time.sleep(10)
-        # After all locations for this search_term, wait 60 seconds
         logging.info("⏳ Waiting 60 seconds before next search term to avoid rate limits...")
         time.sleep(60)
-    
     # Combine results
     if not all_jobs:
         logging.warning("\n🚫 No job listings were found.")
         return None
-
-    # Filter out empty DataFrames before concatenation
     non_empty_jobs = [df for df in all_jobs if not df.empty]
     if not non_empty_jobs:
         logging.warning("\n🚫 All job DataFrames are empty after filtering. No jobs to process.")
         return None
-
     df = pd.concat(non_empty_jobs, ignore_index=True).drop_duplicates(
         subset=["title", "company", "location"]
     )
-    
     logging.info("\n📊 Scraping Summary:")
     logging.info("  Total jobs found: %d", len(df))
     logging.info("  Unique jobs after deduplication: %d", len(df))
     logging.info("  Search terms processed: %d", len(search_terms))
     logging.info("  Locations processed: %d", len(locations))
-    
     return df
 
 def save_to_csv(df, output_path="jobs_raw.csv"):
@@ -382,7 +369,10 @@ def main():
         sys.exit(0)
     
     # Step 3: Save to CSV
-    output_file = config.get("output_file", "jobs_raw.csv")
+    output_file = config.get("output_file", "data/jobs_raw.csv")
+    # Ensure data directory exists
+    data_dir = os.path.join(os.path.dirname(__file__), "data")
+    os.makedirs(data_dir, exist_ok=True)
     if not save_to_csv(jobs_df, output_file):
         sys.exit(1)
     
@@ -394,14 +384,14 @@ def main():
     logging.info("\n" + "=" * 50)
     logging.info("🎉 SCRAPING COMPLETED!")
     logging.info("=" * 50)
-    logging.info("📊 Total jobs scraped: %d", len(jobs_df))
-    logging.info("📄 Local file: %s", output_file)
+    logging.info("📊 Total jobs scraped: %d", jobs_df.shape[0])
+    logging.info("📄 Local file: %s", os.path.abspath(output_file))
     if not config.get("upload_to_gdrive", False):
         logging.info("☁️ Upload skipped as per config.")
     elif config.get("upload_to_gdrive", False) and 'rclone' not in os.popen('command -v rclone').read():
          logging.info("☁️ Upload skipped (rclone not available locally)")
     
-    logging.info("📝 Next step: Run the Google Colab notebook to process with LLM")
+
 
 if __name__ == "__main__":
     main() 

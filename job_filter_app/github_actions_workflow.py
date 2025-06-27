@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(mes
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
-CSV_FILE = os.environ.get('CSV_FILE', str(BASE_DIR / 'jobs_raw.csv'))
+CSV_FILE = os.environ.get('CSV_FILE', str(DATA_DIR / 'jobs_raw.csv'))
 HISTORY_FILE = os.environ.get('HISTORY_FILE', str(DATA_DIR / 'job_history.json'))
 ALL_JOBS_FILE = DATA_DIR / 'all_jobs.csv'
 NEW_JOBS_FILE = DATA_DIR / 'new_jobs.csv'
