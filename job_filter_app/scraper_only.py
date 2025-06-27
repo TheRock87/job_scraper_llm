@@ -26,10 +26,11 @@ jobspy_path = current_dir.parent
 logging.info("[🧪] Adding to sys.path: %s", jobspy_path)
 sys.path.insert(0, str(jobspy_path))
 
-# Robust import of jobspy for any working directory
-project_root = Path(__file__).resolve().parent.parent
+# Always add the project root (the directory containing both job_filter_app and jobspy) to sys.path
+project_root = Path(__file__).resolve().parents[1]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
+
 try:
     from jobspy import scrape_jobs
     logging.info("[✅] jobspy imported successfully!")
