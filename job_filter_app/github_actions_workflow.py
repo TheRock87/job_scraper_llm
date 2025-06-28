@@ -66,7 +66,10 @@ def process_new_jobs(csv_file, history_file):
         str(Path(__file__).resolve().parent / 'jobs_raw.csv'),  # Same directory as script
         str(Path(__file__).resolve().parent / 'data' / 'jobs_raw.csv'),  # data subdirectory
         'jobs_raw.csv',  # Current working directory
-        'data/jobs_raw.csv'  # data subdirectory from current working directory
+        'data/jobs_raw.csv',  # data subdirectory from current working directory
+        # GitHub Actions specific paths (scraper runs from root, workflow from job_filter_app)
+        str(Path(__file__).resolve().parent.parent / 'data' / 'jobs_raw.csv'),  # ../data/jobs_raw.csv
+        str(Path(__file__).resolve().parent.parent / 'jobs_raw.csv'),  # ../jobs_raw.csv
     ]
     
     csv_file_found = None
