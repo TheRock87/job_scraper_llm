@@ -292,6 +292,11 @@ def save_to_csv(df, output_path="jobs_raw.csv"):
     """Save jobs to CSV file"""
     logging.info("\n💾 Saving jobs to %s...", output_path)
     
+    # Ensure the data directory exists if the path includes it
+    output_file = Path(output_path)
+    if output_file.parent.name == "data":
+        output_file.parent.mkdir(exist_ok=True)
+    
     try:
         df.to_csv(output_path, index=False)
         logging.info("✅ Successfully saved %d jobs to %s", len(df), output_path)
@@ -351,7 +356,7 @@ def main():
         sys.exit(0)
     
     # Step 3: Save to CSV
-    output_file = config.get("output_file", "jobs_raw.csv")
+    output_file = config.get("output_file", "data/jobs_raw.csv")
     if not save_to_csv(jobs_df, output_file):
         sys.exit(1)
     

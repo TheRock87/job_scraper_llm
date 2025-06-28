@@ -20,7 +20,7 @@ on:
   # Trigger when jobs_raw.csv is updated
   push:
     paths:
-      - 'job_filter_app/jobs_raw.csv'
+      - 'job_filter_app/data/jobs_raw.csv'
     branches:
       - main
 

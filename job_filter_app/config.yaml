@@ -132,3 +132,6 @@ proxies:
   - qqxegrku:u6msqzeehxwh@173.0.9.70:5653
   - localhost
 
+# Output file configuration
+output_file: data/jobs_raw.csv
+
