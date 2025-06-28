@@ -109,7 +109,6 @@ jobs:
         echo "- `data/all_jobs.csv` - All jobs with classifications" >> $GITHUB_STEP_SUMMARY
         echo "- `data/summary.json` - Processing statistics" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "☁️ **Google Drive:** Files uploaded to AI-Jobs folder" >> $GITHUB_STEP_SUMMARY
     
     - name: 🔄 Commit updated history
       if: steps.process-jobs.outputs.has_new_jobs == 'true' || github.event.inputs.force_process == 'true'
@@ -117,5 +116,15 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add job_filter_app/job_history.json
-        git commit -m "📊 Update job history - ${{ steps.process-jobs.outputs.new_jobs_count }} new jobs" || echo "No changes to commit"
-        git push 
+        git add job_filter_app/data/
+        git commit -m "📊 Update job history and processed files - ${{ steps.process-jobs.outputs.new_jobs_count }} new jobs" || echo "No changes to commit"
+        git push
+
+    - name: 🔄 Commit processed files (always)
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add job_filter_app/data/
+        git commit -m "📊 Update processed job files - ${{ steps.process-jobs.outputs.total_jobs_count }} total jobs" || echo "No changes to commit"
+        git push
+
