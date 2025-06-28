@@ -20,7 +20,7 @@ on:
   # Trigger when jobs_raw.csv is updated
   push:
     paths:
-      - 'job_filter_app/jobs_raw.csv'
+      - 'job_filter_app/data/jobs_raw.csv'
     branches:
       - main
 
@@ -51,10 +51,19 @@ jobs:
       run: pip install -e .
     
     - name: "🕸️ Scrape jobs and generate jobs_raw.csv"
-      run: python job_filter_app/scraper_only.py
+      working-directory: job_filter_app
+      run: python scraper_only.py
     
     - name: List files for debug
-      run: ls -l job_filter_app/
+      run: |
+        echo "=== Root directory ==="
+        ls -la
+        echo "=== job_filter_app directory ==="
+        ls -la job_filter_app/
+        echo "=== job_filter_app/data directory ==="
+        ls -la job_filter_app/data/ || echo "data directory not found"
+        echo "=== Current working directory ==="
+        pwd
     
     - name: 🔍 Process and identify new jobs
       id: process-jobs
