@@ -291,15 +291,20 @@ def scrape_jobs_with_progress(config):
 def save_to_csv(df, output_path="jobs_raw.csv"):
     """Save jobs to CSV file"""
     logging.info("\n💾 Saving jobs to %s...", output_path)
+    logging.info("   Current working directory: %s", os.getcwd())
+    logging.info("   Absolute output path: %s", os.path.abspath(output_path))
     
     # Ensure the data directory exists if the path includes it
     output_file = Path(output_path)
     if output_file.parent.name == "data":
         output_file.parent.mkdir(exist_ok=True)
+        logging.info("   Created/verified data directory: %s", output_file.parent.absolute())
     
     try:
         df.to_csv(output_path, index=False)
         logging.info("✅ Successfully saved %d jobs to %s", len(df), output_path)
+        logging.info("   File exists after save: %s", os.path.exists(output_path))
+        logging.info("   File size: %d bytes", os.path.getsize(output_path) if os.path.exists(output_path) else 0)
         return True
     except Exception as e:
         logging.error("❌ Failed to save CSV: %s", e)

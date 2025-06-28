@@ -59,15 +59,37 @@ def save_job_history(jobs_data, history_file):
 
 def process_new_jobs(csv_file, history_file):
     logging.info("Processing jobs for GitHub Actions...")
-    if not os.path.exists(csv_file):
-        logging.error(f"CSV file not found: {csv_file}")
+    
+    # Try multiple possible locations for the CSV file
+    possible_locations = [
+        csv_file,  # Original path from environment variable
+        str(Path(__file__).resolve().parent / 'jobs_raw.csv'),  # Same directory as script
+        str(Path(__file__).resolve().parent / 'data' / 'jobs_raw.csv'),  # data subdirectory
+        'jobs_raw.csv',  # Current working directory
+        'data/jobs_raw.csv'  # data subdirectory from current working directory
+    ]
+    
+    csv_file_found = None
+    for location in possible_locations:
+        if os.path.exists(location):
+            csv_file_found = location
+            logging.info(f"Found CSV file at: {location}")
+            break
+    
+    if not csv_file_found:
+        logging.error(f"CSV file not found in any of these locations:")
+        for location in possible_locations:
+            logging.error(f"  - {location}")
+        logging.error(f"Current working directory: {os.getcwd()}")
+        logging.error(f"Script directory: {Path(__file__).resolve().parent}")
         return None, None
+    
     try:
-        df = pd.read_csv(csv_file)
+        df = pd.read_csv(csv_file_found)
     except Exception as e:
-        logging.error(f"Failed to read CSV: {e}")
+        logging.error(f"Failed to read CSV from {csv_file_found}: {e}")
         return None, None
-    logging.info(f"Loaded {len(df)} jobs from {csv_file}")
+    logging.info(f"Loaded {len(df)} jobs from {csv_file_found}")
     previous_jobs = load_previous_jobs(history_file)
     df['job_hash'] = df.apply(create_job_hash, axis=1)
     new_jobs = []
