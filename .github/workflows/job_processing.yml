@@ -13,9 +13,9 @@ on:
         default: false
         type: boolean
   
-  # Trigger on schedule (daily at 6 AM UTC)
+  # Trigger on schedule (daily at 1 PM UTC)
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 13 * * *'
   
   # Trigger when jobs_raw.csv is updated
   push:
