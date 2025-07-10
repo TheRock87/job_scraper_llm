@@ -15,7 +15,7 @@ on:
   
   # Trigger on schedule (daily at 1 PM UTC)
   schedule:
-    - cron: '59 11 * * *'
+    - cron: '59 10 * * *'
   
   # Trigger when jobs_raw.csv is updated
   push:
