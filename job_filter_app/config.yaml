@@ -26,15 +26,15 @@ locations:
   # Saudi Arabia
   - Riyadh, Saudi Arabia
   - Jeddah, Saudi Arabia
-  - Dammam, Saudi Arabia
-  - Khobar, Saudi Arabia
-  - Mecca, Saudi Arabia
-  - Medina, Saudi Arabia
+  # - Dammam, Saudi Arabia
+  # - Khobar, Saudi Arabia
+  # - Mecca, Saudi Arabia
+  # - Medina, Saudi Arabia
   - NEOM, Saudi Arabia
   # Kuwait
-  - Kuwait City, Kuwait
-  - Hawally, Kuwait
-  - Salmiya, Kuwait
+  # - Kuwait City, Kuwait
+  # - Hawally, Kuwait
+  # - Salmiya, Kuwait
   # Qatar, Oman, Bahrain
   - Doha, Qatar
   - Muscat, Oman
@@ -51,20 +51,20 @@ locations:
   - Valencia, Spain
   # UK
   - London, UK
-  - Manchester, UK
-  - Cambridge, UK
+  # - Manchester, UK
+  # - Cambridge, UK
   - Edinburgh, UK
-  - Birmingham, UK
-  - Bristol, UK
+  # - Birmingham, UK
+  # - Bristol, UK
   - Nottingham, UK
   - Glasgow, UK
-  - Aberdeen, UK
-  - Dundee, UK
+  # - Aberdeen, UK
+  # - Dundee, UK
   # Ireland
   - Dublin, Ireland
-  - Cork, Ireland
-  - Galway, Ireland
-  - Limerick, Ireland
+  # - Cork, Ireland
+  # - Galway, Ireland
+  # - Limerick, Ireland
   # Austria
   - Vienna, Austria
   - Linz, Austria
@@ -73,24 +73,24 @@ locations:
   - Toronto, Canada
   - Vancouver, Canada
   - Montreal, Canada
-  - Ottawa, Canada
-  - Calgary, Canada
-  - Edmonton, Canada
-  - Waterloo, Canada
+  # - Ottawa, Canada
+  # - Calgary, Canada
+  # - Edmonton, Canada
+  # - Waterloo, Canada
   # Australia
   - Sydney, Australia
   - Melbourne, Australia
-  - Brisbane, Australia
-  - Perth, Australia
-  - Adelaide, Australia
-  - Canberra, Australia
-  - Gold Coast, Australia
+  # - Brisbane, Australia
+  # - Perth, Australia
+  # - Adelaide, Australia
+  # - Canberra, Australia
+  # - Gold Coast, Australia
   # New Zealand
   - Auckland, New Zealand
-  - Wellington, New Zealand
-  - Christchurch, New Zealand
-  - Hamilton, New Zealand
-  - Tauranga, New Zealand
+  # - Wellington, New Zealand
+  # - Christchurch, New Zealand
+  # - Hamilton, New Zealand
+  # - Tauranga, New Zealand
   
 use_llm_filter: true
 llm_prompt_template: |
